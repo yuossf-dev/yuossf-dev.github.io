@@ -1,8 +1,8 @@
 // Advanced Converter with Real Conversion Libraries
 let currentTool = '';
 let uploadedFile = null;
+let ffmpegInstance = null;
 let ffmpegLoaded = false;
-let ffmpeg = null;
 
 // Tool configurations
 const toolConfig = {
@@ -198,7 +198,7 @@ function selectTool(tool) {
     fileInput.value = '';
     fileInput.onchange = handleFileUpload;
     
-    // Show options
+    // Show options for image tools
     if (toolConfig[tool].options) {
         document.getElementById('optionsPanel').classList.remove('hidden');
         document.getElementById('optionsContent').innerHTML = toolConfig[tool].options;
@@ -212,6 +212,35 @@ function selectTool(tool) {
         }
     } else {
         document.getElementById('optionsPanel').classList.add('hidden');
+    }
+    
+    // Show/hide video/audio options
+    const optionsArea = document.getElementById('optionsArea');
+    const gifOptions = document.getElementById('gifOptions');
+    const mp3Options = document.getElementById('mp3Options');
+    const videoOptions = document.getElementById('videoOptions');
+    const waveOptions = document.getElementById('waveOptions');
+    
+    // Hide all first
+    optionsArea.classList.add('hidden');
+    gifOptions.classList.add('hidden');
+    mp3Options.classList.add('hidden');
+    videoOptions.classList.add('hidden');
+    waveOptions.classList.add('hidden');
+    
+    // Show relevant options
+    if (tool === 'video-to-gif') {
+        optionsArea.classList.remove('hidden');
+        gifOptions.classList.remove('hidden');
+    } else if (tool === 'video-to-mp3') {
+        optionsArea.classList.remove('hidden');
+        mp3Options.classList.remove('hidden');
+    } else if (tool === 'gif-to-video') {
+        optionsArea.classList.remove('hidden');
+        videoOptions.classList.remove('hidden');
+    } else if (tool === 'audio-to-video') {
+        optionsArea.classList.remove('hidden');
+        waveOptions.classList.remove('hidden');
     }
     
     // Hide results
@@ -844,83 +873,214 @@ async function mergeImages() {
     });
 }
 
-// Video Conversion Placeholder
+// Video Conversion Implementation
 async function videoConversionPlaceholder(tool) {
-    updateProgress(30, 'Preparing conversion...');
+    updateProgress(10, 'Initializing FFmpeg...');
     
-    const toolNames = {
-        'video-to-gif': 'Video to GIF',
-        'video-to-mp3': 'Video to MP3',
-        'gif-to-video': 'GIF to Video',
-        'audio-to-video': 'Audio to Video with Waveform'
-    };
-    
-    // Create an info card instead of failing
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const infoHTML = `
-                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
-                    <div class="flex items-start">
-                        <i class="fas fa-info-circle text-yellow-600 text-3xl mr-4"></i>
-                        <div>
-                            <h4 class="font-bold text-lg text-yellow-800 mb-2">${toolNames[tool]} - Coming Soon!</h4>
-                            <p class="text-yellow-700 mb-4">This advanced feature requires FFmpeg.wasm library activation.</p>
-                            <div class="bg-white rounded p-4 mb-3">
-                                <p class="font-semibold mb-2">What this tool will do:</p>
-                                <ul class="list-disc ml-5 text-sm space-y-1">
-                                    ${getToolFeatures(tool)}
-                                </ul>
-                            </div>
-                            <p class="text-sm text-yellow-600">
-                                <i class="fas fa-rocket mr-1"></i> 
-                                <strong>Why not available yet?</strong> FFmpeg adds 30MB download size. 
-                                We're keeping the site fast for now!
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `;
+    try {
+        // Initialize FFmpeg if not already done
+        if (!ffmpegInstance) {
+            const { FFmpeg } = FFmpegWASM;
+            ffmpegInstance = new FFmpeg();
             
-            // Create a dummy blob
-            const dummyBlob = new Blob(['Coming soon'], { type: 'text/plain' });
-            const url = URL.createObjectURL(dummyBlob);
-            
-            resolve({
-                url: url,
-                filename: 'coming_soon.txt',
-                size: dummyBlob.size,
-                preview: infoHTML
+            ffmpegInstance.on('log', ({ message }) => {
+                console.log('FFmpeg:', message);
             });
-        }, 1000);
-    });
+            
+            ffmpegInstance.on('progress', ({ progress }) => {
+                const percent = Math.round(progress * 100);
+                updateProgress(60 + (percent * 0.3), `Processing... ${percent}%`);
+            });
+        }
+        
+        if (!ffmpegLoaded) {
+            updateProgress(20, 'Loading FFmpeg library (first time, ~30MB)...');
+            await ffmpegInstance.load();
+            ffmpegLoaded = true;
+            updateProgress(50, 'FFmpeg loaded successfully!');
+        } else {
+            updateProgress(50, 'FFmpeg ready!');
+        }
+        
+        // Route to appropriate conversion
+        switch(tool) {
+            case 'video-to-gif':
+                return await videoToGif();
+            case 'video-to-mp3':
+                return await videoToMp3();
+            case 'gif-to-video':
+                return await gifToVideo();
+            case 'audio-to-video':
+                return await audioToVideo();
+            default:
+                throw new Error('Unknown conversion type');
+        }
+        
+    } catch (error) {
+        console.error('FFmpeg error:', error);
+        throw new Error('Video conversion failed. ' + error.message);
+    }
 }
 
-function getToolFeatures(tool) {
-    const features = {
-        'video-to-gif': `
-            <li>Convert video clips to animated GIFs</li>
-            <li>Adjustable frame rate (FPS)</li>
-            <li>Custom duration selection</li>
-            <li>Optimized file size</li>
-        `,
-        'video-to-mp3': `
-            <li>Extract audio from any video</li>
-            <li>Multiple quality options (128-320kbps)</li>
-            <li>Fast conversion</li>
-            <li>Supports all video formats</li>
-        `,
-        'gif-to-video': `
-            <li>Convert GIF to MP4 or WebM</li>
-            <li>Better compression</li>
-            <li>Smaller file sizes</li>
-            <li>Compatible with all players</li>
-        `,
-        'audio-to-video': `
-            <li>Create video from audio file</li>
-            <li>Beautiful waveform visualization</li>
-            <li>Custom colors and background</li>
-            <li>Perfect for social media</li>
-        `
+// Video to GIF conversion
+async function videoToGif() {
+    updateProgress(60, 'Converting video to GIF...');
+    
+    const fps = document.getElementById('gifFps')?.value || 10;
+    const duration = document.getElementById('gifDuration')?.value || 5;
+    
+    // Write video file to FFmpeg virtual filesystem
+    const videoData = await uploadedFile.arrayBuffer();
+    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
+    
+    // Run FFmpeg command
+    updateProgress(70, 'Processing frames...');
+    await ffmpegInstance.exec([
+        '-i', 'input.mp4',
+        '-t', String(duration),
+        '-vf', `fps=${fps},scale=640:-1:flags=lanczos`,
+        '-loop', '0',
+        'output.gif'
+    ]);
+    
+    updateProgress(90, 'Finalizing GIF...');
+    
+    // Read the result
+    const data = await ffmpegInstance.readFile('output.gif');
+    const blob = new Blob([data.buffer], { type: 'image/gif' });
+    const url = URL.createObjectURL(blob);
+    
+    // Cleanup
+    await ffmpegInstance.deleteFile('input.mp4');
+    await ffmpegInstance.deleteFile('output.gif');
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.gif',
+        size: blob.size,
+        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="GIF Preview">`
     };
-    return features[tool] || '<li>Advanced conversion features</li>';
+}
+
+// Video to MP3 conversion
+async function videoToMp3() {
+    updateProgress(60, 'Extracting audio...');
+    
+    const quality = document.getElementById('audioQuality')?.value || '192k';
+    
+    // Write video file
+    const videoData = await uploadedFile.arrayBuffer();
+    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
+    
+    // Extract audio
+    updateProgress(70, 'Converting to MP3...');
+    await ffmpegInstance.exec([
+        '-i', 'input.mp4',
+        '-vn',
+        '-ar', '44100',
+        '-ac', '2',
+        '-b:a', quality,
+        'output.mp3'
+    ]);
+    
+    updateProgress(90, 'Finalizing audio...');
+    
+    // Read result
+    const data = await ffmpegInstance.readFile('output.mp3');
+    const blob = new Blob([data.buffer], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
+    
+    // Cleanup
+    await ffmpegInstance.deleteFile('input.mp4');
+    await ffmpegInstance.deleteFile('output.mp3');
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp3',
+        size: blob.size,
+        preview: `<audio controls class="w-full"><source src="${url}" type="audio/mpeg"></audio>`
+    };
+}
+
+// GIF to Video conversion
+async function gifToVideo() {
+    updateProgress(60, 'Converting GIF to video...');
+    
+    const format = document.getElementById('videoFormat')?.value || 'mp4';
+    
+    // Write GIF file
+    const gifData = await uploadedFile.arrayBuffer();
+    await ffmpegInstance.writeFile('input.gif', new Uint8Array(gifData));
+    
+    // Convert to video
+    updateProgress(70, 'Encoding video...');
+    await ffmpegInstance.exec([
+        '-i', 'input.gif',
+        '-movflags', 'faststart',
+        '-pix_fmt', 'yuv420p',
+        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+        `output.${format}`
+    ]);
+    
+    updateProgress(90, 'Finalizing video...');
+    
+    // Read result
+    const data = await ffmpegInstance.readFile(`output.${format}`);
+    const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
+    const blob = new Blob([data.buffer], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    
+    // Cleanup
+    await ffmpegInstance.deleteFile('input.gif');
+    await ffmpegInstance.deleteFile(`output.${format}`);
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.' + format,
+        size: blob.size,
+        preview: `<video controls class="max-w-full h-auto rounded"><source src="${url}" type="${mimeType}"></video>`
+    };
+}
+
+// Audio to Video (with waveform)
+async function audioToVideo() {
+    updateProgress(60, 'Generating waveform visualization...');
+    
+    const waveColor = document.getElementById('waveColor')?.value || '#6366f1';
+    const bgColor = document.getElementById('waveBgColor')?.value || '#000000';
+    
+    // Write audio file
+    const audioData = await uploadedFile.arrayBuffer();
+    const inputExt = uploadedFile.name.split('.').pop().toLowerCase();
+    await ffmpegInstance.writeFile(`input.${inputExt}`, new Uint8Array(audioData));
+    
+    // Create video with waveform
+    updateProgress(70, 'Creating waveform video...');
+    await ffmpegInstance.exec([
+        '-i', `input.${inputExt}`,
+        '-filter_complex',
+        `color=c=${bgColor.replace('#', '0x')}:s=1280x720[bg];[0:a]showwaves=s=1280x720:mode=line:rate=25:colors=${waveColor.replace('#', '0x')}[waves];[bg][waves]overlay=format=auto`,
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+        '-shortest',
+        'output.mp4'
+    ]);
+    
+    updateProgress(90, 'Finalizing video...');
+    
+    // Read result
+    const data = await ffmpegInstance.readFile('output.mp4');
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    
+    // Cleanup
+    await ffmpegInstance.deleteFile(`input.${inputExt}`);
+    await ffmpegInstance.deleteFile('output.mp4');
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.mp4',
+        size: blob.size,
+        preview: `<video controls class="max-w-full h-auto rounded"><source src="${url}" type="video/mp4"></video>`
+    };
 }

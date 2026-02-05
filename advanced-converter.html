@@ -168,6 +168,65 @@
                 <div id="optionsContent" class="space-y-4"></div>
             </div>
 
+            <!-- Options Area (for video/audio conversions) -->
+            <div id="optionsArea" class="mt-6 hidden">
+                <div class="bg-gray-50 border-2 border-gray-200 p-6 rounded-lg">
+                    <h4 class="font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-sliders-h mr-2 text-purple-600"></i>
+                        Conversion Options
+                    </h4>
+                    
+                    <!-- Video to GIF Options -->
+                    <div id="gifOptions" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">FPS (Frames Per Second)</label>
+                            <input type="number" id="gifFps" value="10" min="5" max="30" class="w-full px-4 py-2 border rounded">
+                            <p class="text-xs text-gray-500 mt-1">Lower = smaller file size</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Duration (seconds)</label>
+                            <input type="number" id="gifDuration" value="5" min="1" max="30" class="w-full px-4 py-2 border rounded">
+                        </div>
+                    </div>
+                    
+                    <!-- Video to MP3 Options -->
+                    <div id="mp3Options" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Audio Quality</label>
+                            <select id="audioQuality" class="w-full px-4 py-2 border rounded">
+                                <option value="128k">128 kbps (Good)</option>
+                                <option value="192k" selected>192 kbps (Better)</option>
+                                <option value="256k">256 kbps (Best)</option>
+                                <option value="320k">320 kbps (Maximum)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- GIF to Video Options -->
+                    <div id="videoOptions" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Video Format</label>
+                            <select id="videoFormat" class="w-full px-4 py-2 border rounded">
+                                <option value="mp4" selected>MP4 (Most Compatible)</option>
+                                <option value="webm">WebM (Smaller Size)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Audio to Video Options -->
+                    <div id="waveOptions" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Waveform Color</label>
+                            <input type="color" id="waveColor" value="#6366f1" class="w-full h-12 border rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Background Color</label>
+                            <input type="color" id="waveBgColor" value="#000000" class="w-full h-12 border rounded cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Progress -->
             <div id="progressArea" class="mt-8 hidden">
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-4">
