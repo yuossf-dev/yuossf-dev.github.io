@@ -918,82 +918,35 @@ async function videoConversionPlaceholder(tool) {
 
 // Video to GIF conversion
 async function videoToGif() {
-    updateProgress(20, 'Loading video...');
+    updateProgress(60, 'Converting video to GIF...');
     
     const fps = document.getElementById('gifFps')?.value || 10;
     const duration = document.getElementById('gifDuration')?.value || 5;
     
-    // Create video element
-    const video = document.createElement('video');
-    video.src = URL.createObjectURL(uploadedFile);
-    video.muted = true;
+    // Write video file to FFmpeg virtual filesystem
+    const videoData = await uploadedFile.arrayBuffer();
+    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
     
-    await new Promise((resolve, reject) => {
-        video.onloadedmetadata = resolve;
-        video.onerror = reject;
-    });
+    // Run FFmpeg command
+    updateProgress(70, 'Processing frames...');
+    await ffmpegInstance.exec([
+        '-i', 'input.mp4',
+        '-t', String(duration),
+        '-vf', `fps=${fps},scale=640:-1:flags=lanczos`,
+        '-loop', '0',
+        'output.gif'
+    ]);
     
-    updateProgress(40, 'Extracting frames...');
+    updateProgress(90, 'Finalizing GIF...');
     
-    // Create canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.min(video.videoWidth, 640);
-    canvas.height = Math.floor(canvas.width * video.videoHeight / video.videoWidth);
-    const ctx = canvas.getContext('2d');
+    // Read the result
+    const data = await ffmpegInstance.readFile('output.gif');
+    const blob = new Blob([data.buffer], { type: 'image/gif' });
+    const url = URL.createObjectURL(blob);
     
-    // Extract frames
-    const frameInterval = 1 / fps;
-    const totalFrames = Math.ceil(duration * fps);
-    const frames = [];
-    
-    for (let i = 0; i < totalFrames; i++) {
-        video.currentTime = i * frameInterval;
-        await new Promise(resolve => {
-            video.onseeked = resolve;
-        });
-        
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        frames.push(canvas.toDataURL('image/png'));
-        
-        if (i % 5 === 0) {
-            updateProgress(40 + (i / totalFrames) * 40, `Extracting frame ${i + 1}/${totalFrames}...`);
-        }
-    }
-    
-    updateProgress(85, 'Creating preview...');
-    
-    // Create an animated preview
-    const previewHTML = `
-        <div class="text-center p-4 bg-blue-50 border-2 border-blue-300 rounded">
-            <h3 class="font-bold text-lg mb-2">🎬 Video to GIF - Frame Extraction Complete</h3>
-            <p class="mb-3">Extracted ${frames.length} frames at ${fps} FPS</p>
-            <img src="${frames[0]}" class="max-w-full h-auto rounded mb-3" alt="First Frame">
-            <div class="text-sm text-gray-600">
-                <strong>Note:</strong> Full GIF encoding requires additional libraries.<br>
-                For now, download includes frame data that can be converted using online tools.
-            </div>
-        </div>
-    `;
-    
-    const info = {
-        message: `Extracted ${frames.length} frames from video`,
-        fps: fps,
-        duration: duration,
-        frames: frames.length
-    };
-    
-    const infoBlob = new Blob([JSON.stringify(info, null, 2)], { type: 'text/plain' });
-    const infoUrl = URL.createObjectURL(infoBlob);
-    
-    updateProgress(100, 'Complete!');
-    
-    return {
-        url: infoUrl,
-        filename: 'gif_frames_info.txt',
-        size: infoBlob.size,
-        preview: previewHTML
-    };
-}
+    // Cleanup
+    await ffmpegInstance.deleteFile('input.mp4');
+    await ffmpegInstance.deleteFile('output.gif');
     
     return {
         url: url,
@@ -1003,55 +956,44 @@ async function videoToGif() {
     };
 }
 
-// Video to MP3 conversion (Browser-based)
+// Video to MP3 conversion
 async function videoToMp3() {
-    updateProgress(20, 'Loading video...');
+    updateProgress(60, 'Extracting audio...');
     
-    const video = document.createElement('video');
-    video.src = URL.createObjectURL(uploadedFile);
+    const quality = document.getElementById('audioQuality')?.value || '192k';
     
-    await new Promise((resolve, reject) => {
-        video.onloadedmetadata = resolve;
-        video.onerror = reject;
-    });
+    // Write video file
+    const videoData = await uploadedFile.arrayBuffer();
+    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
     
-    updateProgress(40, 'Extracting audio track...');
+    // Extract audio
+    updateProgress(70, 'Converting to MP3...');
+    await ffmpegInstance.exec([
+        '-i', 'input.mp4',
+        '-vn',
+        '-ar', '44100',
+        '-ac', '2',
+        '-b:a', quality,
+        'output.mp3'
+    ]);
     
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaElementSource(video);
-    const dest = audioContext.createMediaStreamDestination();
-    source.connect(dest);
+    updateProgress(90, 'Finalizing audio...');
     
-    updateProgress(60, 'Recording audio...');
+    // Read result
+    const data = await ffmpegInstance.readFile('output.mp3');
+    const blob = new Blob([data.buffer], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
     
-    const mediaRecorder = new MediaRecorder(dest.stream);
-    const chunks = [];
+    // Cleanup
+    await ffmpegInstance.deleteFile('input.mp4');
+    await ffmpegInstance.deleteFile('output.mp3');
     
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-    
-    return new Promise((resolve) => {
-        mediaRecorder.onstop = () => {
-            updateProgress(90, 'Finalizing...');
-            const blob = new Blob(chunks, { type: 'audio/webm' });
-            const url = URL.createObjectURL(blob);
-            
-            resolve({
-                url: url,
-                filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.webm',
-                size: blob.size,
-                preview: `<audio controls class="w-full"><source src="${url}" type="audio/webm"></audio>`
-            });
-        };
-        
-        mediaRecorder.start();
-        video.play();
-        
-        setTimeout(() => {
-            video.pause();
-            mediaRecorder.stop();
-            audioContext.close();
-        }, video.duration * 1000);
-    });
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp3',
+        size: blob.size,
+        preview: `<audio controls class="w-full"><source src="${url}" type="audio/mpeg"></audio>`
+    };
 }
 
 // GIF to Video conversion
@@ -1062,29 +1004,29 @@ async function gifToVideo() {
     
     // Write GIF file
     const gifData = await uploadedFile.arrayBuffer();
-    ffmpegInstance.FS('writeFile', 'input.gif', new Uint8Array(gifData));
+    await ffmpegInstance.writeFile('input.gif', new Uint8Array(gifData));
     
     // Convert to video
     updateProgress(70, 'Encoding video...');
-    await ffmpegInstance.run(
+    await ffmpegInstance.exec([
         '-i', 'input.gif',
         '-movflags', 'faststart',
         '-pix_fmt', 'yuv420p',
         '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
         `output.${format}`
-    );
+    ]);
     
     updateProgress(90, 'Finalizing video...');
     
     // Read result
-    const data = ffmpegInstance.FS('readFile', `output.${format}`);
+    const data = await ffmpegInstance.readFile(`output.${format}`);
     const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
     const blob = new Blob([data.buffer], { type: mimeType });
     const url = URL.createObjectURL(blob);
     
     // Cleanup
-    ffmpegInstance.FS('unlink', 'input.gif');
-    ffmpegInstance.FS('unlink', `output.${format}`);
+    await ffmpegInstance.deleteFile('input.gif');
+    await ffmpegInstance.deleteFile(`output.${format}`);
     
     return {
         url: url,
@@ -1096,135 +1038,43 @@ async function gifToVideo() {
 
 // Audio to Video (with waveform)
 async function audioToVideo() {
-    updateProgress(10, 'Loading audio file...');
+    updateProgress(60, 'Generating waveform visualization...');
     
-    const waveColor = document.getElementById('waveColor')?.value || '#667eea';
+    const waveColor = document.getElementById('waveColor')?.value || '#6366f1';
     const bgColor = document.getElementById('waveBg')?.value || '#000000';
     
-    // Create audio context
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // Write audio file
     const audioData = await uploadedFile.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(audioData);
+    const inputExt = uploadedFile.name.split('.').pop().toLowerCase();
+    await ffmpegInstance.writeFile(`input.${inputExt}`, new Uint8Array(audioData));
     
-    updateProgress(30, 'Creating video with audio...');
-    
-    // Get audio data for waveform
-    const channelData = audioBuffer.getChannelData(0);
-    const duration = Math.min(audioBuffer.duration, 30); // Limit to 30 seconds for browser processing
-    
-    // Canvas setup
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 720;
-    const ctx = canvas.getContext('2d');
-    
-    // Create video stream from canvas
-    const stream = canvas.captureStream(25); // 25 FPS
-    
-    // Add audio track to stream
-    const audioSource = audioContext.createBufferSource();
-    audioSource.buffer = audioBuffer;
-    const destination = audioContext.createMediaStreamDestination();
-    audioSource.connect(destination);
-    
-    // Combine video and audio streams
-    const audioTrack = destination.stream.getAudioTracks()[0];
-    stream.addTrack(audioTrack);
-    
-    updateProgress(50, 'Recording video...');
-    
-    // Create MediaRecorder
-    const chunks = [];
-    const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9,opus',
-        videoBitsPerSecond: 2500000
-    });
-    
-    mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-            chunks.push(e.data);
-        }
-    };
-    
-    // Start recording
-    mediaRecorder.start();
-    audioSource.start();
-    
-    // Animate waveform
-    const fps = 25;
-    const totalFrames = Math.ceil(duration * fps);
-    const samplesPerFrame = Math.floor(channelData.length / totalFrames);
-    
-    for (let frame = 0; frame < totalFrames; frame++) {
-        await new Promise(resolve => setTimeout(resolve, 1000 / fps));
-        
-        // Clear canvas
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw waveform
-        ctx.strokeStyle = waveColor;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        
-        const centerY = canvas.height / 2;
-        const barWidth = canvas.width / 100;
-        
-        for (let i = 0; i < 100; i++) {
-            const sampleIndex = Math.floor((frame * samplesPerFrame) + (i * samplesPerFrame / 100));
-            const amplitude = Math.abs(channelData[sampleIndex] || 0);
-            const barHeight = amplitude * (canvas.height / 2);
-            
-            const x = i * barWidth;
-            const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
-            gradient.addColorStop(0, waveColor);
-            gradient.addColorStop(1, waveColor + '80');
-            
-            ctx.fillStyle = gradient;
-            ctx.fillRect(x, centerY - barHeight, barWidth - 2, barHeight * 2);
-        }
-        
-        // Add timestamp
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 32px Arial';
-        ctx.shadowColor = '#000000';
-        ctx.shadowBlur = 10;
-        ctx.fillText(`${(frame / fps).toFixed(1)}s`, 40, 60);
-        ctx.shadowBlur = 0;
-        
-        // Add file name
-        ctx.font = '24px Arial';
-        ctx.fillText(uploadedFile.name, 40, canvas.height - 40);
-        
-        if (frame % 10 === 0) {
-            updateProgress(50 + (frame / totalFrames) * 40, `Recording: ${frame}/${totalFrames} frames...`);
-        }
-    }
+    // Create video with waveform
+    updateProgress(70, 'Creating waveform video...');
+    await ffmpegInstance.exec([
+        '-i', `input.${inputExt}`,
+        '-filter_complex',
+        `color=c=${bgColor.replace('#', '0x')}:s=1280x720[bg];[0:a]showwaves=s=1280x720:mode=line:rate=25:colors=${waveColor.replace('#', '0x')}[waves];[bg][waves]overlay=format=auto`,
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+        '-shortest',
+        'output.mp4'
+    ]);
     
     updateProgress(90, 'Finalizing video...');
     
-    // Stop recording
-    return new Promise((resolve, reject) => {
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            
-            updateProgress(100, 'Complete!');
-            
-            resolve({
-                url: url,
-                filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.webm',
-                size: blob.size
-            });
-        };
-        
-        mediaRecorder.onerror = (e) => {
-            reject(new Error('Recording failed: ' + e.error));
-        };
-        
-        setTimeout(() => {
-            mediaRecorder.stop();
-            audioSource.stop();
-        }, 100);
-    });
+    // Read result
+    const data = await ffmpegInstance.readFile('output.mp4');
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    
+    // Cleanup
+    await ffmpegInstance.deleteFile(`input.${inputExt}`);
+    await ffmpegInstance.deleteFile('output.mp4');
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.mp4',
+        size: blob.size,
+        preview: `<video controls class="max-w-full h-auto rounded"><source src="${url}" type="video/mp4"></video>`
+    };
 }
