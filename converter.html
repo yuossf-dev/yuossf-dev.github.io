@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free online file converter - Convert images to PDF, resize images, compress files. Fast, secure, 100% free!">
+    <meta name="keywords" content="file converter, image to pdf, pdf converter, resize image, compress image, free converter">
+    <meta name="kadam-verification" content="kadamfc5c114619c2f42b89d36e1a8f671cee" />
+    <meta name="google-adsense-account" content="ca-pub-6123398137525980">
+    <title>Free File Converter - Image to PDF, Resize & Compress</title>
+    
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6123398137525980" crossorigin="anonymous"></script>
+    
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        .ad-container {
+            min-height: 100px;
+            background: #f9fafb;
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0;
+            padding: 16px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-file-image text-3xl"></i>
+                    <h1 class="text-2xl font-bold">Free File Converter</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6 text-sm">
+                    <a href="#converter" class="hover:text-gray-200 transition">Converter</a>
+                    <a href="#features" class="hover:text-gray-200 transition">Features</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="gradient-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-4">Convert Files Instantly</h2>
+            <p class="text-xl mb-6">100% Free • No Registration • Works Offline</p>
+            <a href="#converter" class="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition inline-block">
+                Start Converting Free <i class="fas fa-arrow-down ml-2"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Top Ad -->
+    <div class="container mx-auto px-4 mt-8 max-w-4xl">
+        <div class="ad-container">
+            <!-- AdSense Ad Unit 1 -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-6123398137525980"
+                 data-ad-slot="XXXXXXXXXX"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            <!-- Placeholder -->
+            <div class="text-center text-gray-400">
+                <i class="fas fa-ad text-3xl mb-2"></i>
+                <p class="text-sm">Advertisement Space<br><small>Replace with your AdSense code</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Converter Section -->
+    <section id="converter" class="py-12">
+        <div class="container mx-auto px-4 max-w-4xl">
+            <div class="bg-white rounded-xl shadow-2xl p-6 md:p-10">
+                <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">Choose Conversion Type</h3>
+                
+                <!-- Conversion Types -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <button onclick="selectTool('image-to-pdf')" class="tool-btn p-6 border-2 border-purple-500 rounded-xl hover:shadow-lg transition">
+                        <i class="fas fa-file-pdf text-5xl text-purple-600 mb-3"></i>
+                        <h4 class="font-bold text-lg">Image to PDF</h4>
+                        <p class="text-sm text-gray-500 mt-1">Convert JPG/PNG to PDF</p>
+                    </button>
+                    
+                    <button onclick="selectTool('resize')" class="tool-btn p-6 border-2 border-blue-500 rounded-xl hover:shadow-lg transition">
+                        <i class="fas fa-expand-arrows-alt text-5xl text-blue-600 mb-3"></i>
+                        <h4 class="font-bold text-lg">Resize Image</h4>
+                        <p class="text-sm text-gray-500 mt-1">Change dimensions</p>
+                    </button>
+                    
+                    <button onclick="selectTool('compress')" class="tool-btn p-6 border-2 border-green-500 rounded-xl hover:shadow-lg transition">
+                        <i class="fas fa-compress-alt text-5xl text-green-600 mb-3"></i>
+                        <h4 class="font-bold text-lg">Compress Image</h4>
+                        <p class="text-sm text-gray-500 mt-1">Reduce file size</p>
+                    </button>
+                </div>
+
+                <!-- File Upload -->
+                <div id="uploadArea" class="border-4 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-purple-500 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                    <h4 class="text-xl font-semibold mb-2">Drop files here or click to browse</h4>
+                    <p class="text-gray-500 text-sm">Supports: JPG, PNG, GIF, WebP</p>
+                    <input type="file" id="fileInput" multiple accept="image/*" class="hidden" onchange="handleFiles(event.target.files)">
+                </div>
+
+                <!-- File Preview -->
+                <div id="previewArea" class="mt-6 hidden">
+                    <h4 class="font-semibold mb-3">Selected Files:</h4>
+                    <div id="fileList" class="space-y-2"></div>
+                </div>
+
+                <!-- Tool Options -->
+                <div id="toolOptions" class="mt-6 hidden">
+                    <!-- Resize Options -->
+                    <div id="resizeOpts" class="hidden space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Width (px)</label>
+                                <input type="number" id="resizeWidth" value="800" min="10" max="5000" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Height (px)</label>
+                                <input type="number" id="resizeHeight" value="600" min="10" max="5000" class="w-full p-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="keepRatio" checked class="mr-2">
+                            <span class="text-sm">Keep aspect ratio</span>
+                        </label>
+                    </div>
+
+                    <!-- Compress Options -->
+                    <div id="compressOpts" class="hidden">
+                        <label class="block text-sm font-medium mb-2">Quality: <span id="qualityText" class="font-bold">70%</span></label>
+                        <input type="range" id="quality" min="10" max="100" value="70" class="w-full" oninput="document.getElementById('qualityText').textContent = this.value + '%'">
+                        <p class="text-xs text-gray-500 mt-1">Lower quality = smaller file size</p>
+                    </div>
+                </div>
+
+                <!-- Convert Button -->
+                <button id="convertBtn" onclick="performConversion()" class="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed hidden">
+                    <i class="fas fa-magic mr-2"></i> Convert Now (FREE)
+                </button>
+
+                <!-- Progress -->
+                <div id="progress" class="mt-6 hidden">
+                    <div class="bg-gray-200 rounded-full h-3">
+                        <div id="progressBar" class="bg-gradient-to-r from-purple-600 to-blue-600 h-3 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                    <p id="progressText" class="text-center mt-2 text-sm">Processing...</p>
+                </div>
+
+                <!-- Result -->
+                <div id="resultArea" class="mt-6 hidden">
+                    <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
+                        <i class="fas fa-check-circle text-green-600 text-5xl mb-3"></i>
+                        <h4 class="text-xl font-bold text-green-800 mb-4">Conversion Complete!</h4>
+                        <button id="downloadBtn" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
+                            <i class="fas fa-download mr-2"></i> Download File
+                        </button>
+                        <button onclick="resetConverter()" class="ml-3 bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-700 transition">
+                            <i class="fas fa-redo mr-2"></i> Convert Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Middle Ad -->
+    <div class="container mx-auto px-4 my-8 max-w-4xl">
+        <div class="ad-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-6123398137525980"
+                 data-ad-slot="XXXXXXXXXX"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            <div class="text-center text-gray-400">
+                <i class="fas fa-ad text-3xl mb-2"></i>
+                <p class="text-sm">Advertisement Space<br><small>Replace with your AdSense code</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section id="features" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h3 class="text-3xl font-bold text-center mb-12">Why Choose Us?</h3>
+            <div class="grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+                <div class="text-center p-4">
+                    <i class="fas fa-bolt text-5xl text-yellow-500 mb-3"></i>
+                    <h4 class="font-bold mb-2">Lightning Fast</h4>
+                    <p class="text-sm text-gray-600">Instant conversions</p>
+                </div>
+                <div class="text-center p-4">
+                    <i class="fas fa-shield-alt text-5xl text-green-500 mb-3"></i>
+                    <h4 class="font-bold mb-2">100% Private</h4>
+                    <p class="text-sm text-gray-600">Files never uploaded</p>
+                </div>
+                <div class="text-center p-4">
+                    <i class="fas fa-gift text-5xl text-purple-500 mb-3"></i>
+                    <h4 class="font-bold mb-2">Always Free</h4>
+                    <p class="text-sm text-gray-600">No hidden costs</p>
+                </div>
+                <div class="text-center p-4">
+                    <i class="fas fa-mobile-alt text-5xl text-blue-500 mb-3"></i>
+                    <h4 class="font-bold mb-2">Works Everywhere</h4>
+                    <p class="text-sm text-gray-600">Any device</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Ad -->
+    <div class="container mx-auto px-4 my-8 max-w-4xl">
+        <div class="ad-container">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-6123398137525980"
+                 data-ad-slot="XXXXXXXXXX"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            <div class="text-center text-gray-400">
+                <i class="fas fa-ad text-3xl mb-2"></i>
+                <p class="text-sm">Advertisement Space<br><small>Replace with your AdSense code</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-3">&copy; 2026 Free File Converter. All Rights Reserved.</p>
+            <div class="space-x-4 text-sm">
+                <a href="#" class="hover:text-purple-400 transition">Privacy</a>
+                <a href="#" class="hover:text-purple-400 transition">Terms</a>
+                <a href="#" class="hover:text-purple-400 transition">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="converter.js"></script>
+</body>
+</html>
