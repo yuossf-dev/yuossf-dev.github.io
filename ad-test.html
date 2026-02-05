@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdSense Test Page</title>
+    <meta name="google-adsense-account" content="ca-pub-6123398137525980">
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6123398137525980" crossorigin="anonymous"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .ad-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 AdSense Test Page</h1>
+    
+    <div class="info">
+        <h3>✅ AdSense Configuration</h3>
+        <ul>
+            <li><strong>Publisher ID:</strong> ca-pub-6123398137525980</li>
+            <li><strong>Ad Slot ID:</strong> 7818146070</li>
+            <li><strong>Ad Format:</strong> Responsive (auto)</li>
+            <li><strong>Test Date:</strong> <span id="datetime"></span></li>
+        </ul>
+    </div>
+
+    <div class="status">
+        <h3>⚠️ Why Ads Might Not Display:</h3>
+        <ol>
+            <li><strong>AdSense Review:</strong> New ad units can take 24-48 hours to activate</li>
+            <li><strong>Site Not Added:</strong> Make sure your site is added in AdSense dashboard</li>
+            <li><strong>Ad Blocker:</strong> Disable any ad blocking extensions</li>
+            <li><strong>Browser Cache:</strong> Clear cache or use incognito mode</li>
+            <li><strong>Pending Approval:</strong> Your AdSense account might still be under review</li>
+        </ol>
+    </div>
+
+    <div class="ad-container">
+        <h3 style="text-align: center; margin-bottom: 20px;">📍 Ad Unit Test #1</h3>
+        <!-- ad1 -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-6123398137525980"
+             data-ad-slot="7818146070"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+        <p style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">
+            ↑ If you see an ad above, it's working! ↑
+        </p>
+    </div>
+
+    <div class="ad-container">
+        <h3 style="text-align: center; margin-bottom: 20px;">📍 Ad Unit Test #2</h3>
+        <!-- ad1 -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-6123398137525980"
+             data-ad-slot="7818146070"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+        <p style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">
+            ↑ If you see an ad above, it's working! ↑
+        </p>
+    </div>
+
+    <div class="ad-container">
+        <h3 style="text-align: center; margin-bottom: 20px;">📍 Ad Unit Test #3</h3>
+        <!-- ad1 -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-6123398137525980"
+             data-ad-slot="7818146070"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+        <p style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">
+            ↑ If you see an ad above, it's working! ↑
+        </p>
+    </div>
+
+    <div class="success">
+        <h3>🎯 Next Steps:</h3>
+        <ol>
+            <li>Open browser console (F12) and check for errors</li>
+            <li>Look for messages like "AdSense ad requested" or error messages</li>
+            <li>Check your AdSense dashboard: <a href="https://adsense.google.com" target="_blank">adsense.google.com</a></li>
+            <li>Make sure your site is added under "Sites" in AdSense</li>
+            <li>Wait 24-48 hours if you just created the ad unit</li>
+        </ol>
+    </div>
+
+    <script>
+        // Display current date/time
+        document.getElementById('datetime').textContent = new Date().toLocaleString();
+        
+        // Check if AdSense script loaded
+        setTimeout(function() {
+            console.log('%c AdSense Test Page Loaded', 'color: green; font-size: 16px; font-weight: bold');
+            console.log('Publisher ID: ca-pub-6123398137525980');
+            console.log('Ad Slot: 7818146070');
+            console.log('If you see ads above, they are working correctly!');
+            console.log('If you see blank spaces:');
+            console.log('1. Check if ad blocker is enabled');
+            console.log('2. Check browser console for errors');
+            console.log('3. Wait 24-48 hours for new ad units');
+            console.log('4. Verify site in AdSense dashboard');
+        }, 1000);
+    </script>
+</body>
+</html>
