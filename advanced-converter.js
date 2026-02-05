@@ -450,9 +450,173 @@ async function gifToVideo() {
     return showComingSoon('GIF to Video', 'This feature requires FFmpeg for video encoding');
 }
 
-// Audio to Video - Browser Compatible Version
+// Audio to Video - WORKING VERSION with MediaRecorder
 async function audioToVideo() {
-    return showComingSoon('Audio to Video', 'This feature requires FFmpeg and advanced audio processing');
+    updateProgress(10, 'Loading audio file...');
+    
+    try {
+        // Get options
+        const waveColor = document.getElementById('waveColor').value;
+        const bgColor = document.getElementById('waveBgColor').value;
+        
+        // Create audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const arrayBuffer = await uploadedFile.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        
+        updateProgress(30, 'Analyzing waveform...');
+        
+        // Get audio data
+        const channelData = audioBuffer.getChannelData(0);
+        const duration = audioBuffer.duration;
+        const sampleRate = audioBuffer.sampleRate;
+        
+        // Canvas setup
+        const canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 720;
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate bars
+        const barCount = 100;
+        const barWidth = canvas.width / barCount;
+        const samplesPerBar = Math.floor(channelData.length / barCount);
+        
+        updateProgress(50, 'Creating video frames...');
+        
+        // Create video stream
+        const stream = canvas.captureStream(30); // 30 FPS
+        const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'video/webm;codecs=vp9',
+            videoBitsPerSecond: 2500000
+        });
+        
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                chunks.push(e.data);
+            }
+        };
+        
+        // Promise to wait for recording
+        const recordingComplete = new Promise((resolve) => {
+            mediaRecorder.onstop = () => resolve(chunks);
+        });
+        
+        mediaRecorder.start();
+        
+        // Create audio source and destination
+        const source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        const dest = audioCtx.createMediaStreamDestination();
+        source.connect(dest);
+        source.connect(audioCtx.destination);
+        
+        // Animation variables
+        const fps = 30;
+        const totalFrames = Math.floor(duration * fps);
+        let currentFrame = 0;
+        
+        updateProgress(60, 'Rendering animation...');
+        
+        // Animation function
+        function drawFrame() {
+            const progress = currentFrame / totalFrames;
+            const currentSample = Math.floor(progress * channelData.length);
+            
+            // Clear canvas
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw waveform bars
+            for (let i = 0; i < barCount; i++) {
+                const startSample = i * samplesPerBar;
+                const endSample = startSample + samplesPerBar;
+                
+                // Calculate RMS (Root Mean Square) for this segment
+                let sum = 0;
+                for (let j = startSample; j < endSample && j < channelData.length; j++) {
+                    sum += channelData[j] * channelData[j];
+                }
+                const rms = Math.sqrt(sum / samplesPerBar);
+                const barHeight = rms * canvas.height * 2;
+                
+                // Highlight current position
+                if (i === Math.floor(progress * barCount)) {
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = waveColor;
+                }
+                
+                const x = i * barWidth;
+                const y = (canvas.height - barHeight) / 2;
+                
+                ctx.fillRect(x, y, barWidth - 2, barHeight);
+            }
+            
+            // Draw progress line
+            const progressX = progress * canvas.width;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(progressX, 0);
+            ctx.lineTo(progressX, canvas.height);
+            ctx.stroke();
+            
+            // Draw time
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            const currentTime = (progress * duration).toFixed(1);
+            const totalTime = duration.toFixed(1);
+            ctx.fillText(`${currentTime}s / ${totalTime}s`, canvas.width / 2, canvas.height - 30);
+            
+            currentFrame++;
+            
+            if (currentFrame < totalFrames) {
+                setTimeout(drawFrame, 1000 / fps);
+                const percent = 60 + (currentFrame / totalFrames) * 30;
+                updateProgress(percent, `Rendering: ${Math.floor((currentFrame / totalFrames) * 100)}%`);
+            } else {
+                mediaRecorder.stop();
+            }
+        }
+        
+        // Start audio and animation
+        source.start();
+        drawFrame();
+        
+        // Wait for recording to complete
+        const recordedChunks = await recordingComplete;
+        
+        updateProgress(95, 'Finalizing video...');
+        
+        // Create video blob
+        const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(videoBlob);
+        
+        // Clean up
+        audioCtx.close();
+        
+        return {
+            url: url,
+            filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_visualized.webm',
+            size: videoBlob.size,
+            preview: `
+                <video controls class="w-full max-w-2xl mx-auto rounded-lg shadow-lg">
+                    <source src="${url}" type="video/webm">
+                </video>
+                <p class="text-center text-sm text-gray-600 mt-4">
+                    ✅ Video created with waveform visualization!<br>
+                    Duration: ${duration.toFixed(1)}s | Size: ${formatBytes(videoBlob.size)}
+                </p>
+            `
+        };
+        
+    } catch (error) {
+        console.error('Audio to Video error:', error);
+        throw new Error('Audio visualization failed: ' + error.message);
+    }
 }
 
 // Coming Soon Message
