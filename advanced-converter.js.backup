@@ -925,28 +925,28 @@ async function videoToGif() {
     
     // Write video file to FFmpeg virtual filesystem
     const videoData = await uploadedFile.arrayBuffer();
-    ffmpegInstance.FS('writeFile', 'input.mp4', new Uint8Array(videoData));
+    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
     
     // Run FFmpeg command
     updateProgress(70, 'Processing frames...');
-    await ffmpegInstance.run(
+    await ffmpegInstance.exec([
         '-i', 'input.mp4',
         '-t', String(duration),
         '-vf', `fps=${fps},scale=640:-1:flags=lanczos`,
         '-loop', '0',
         'output.gif'
-    );
+    ]);
     
     updateProgress(90, 'Finalizing GIF...');
     
     // Read the result
-    const data = ffmpegInstance.FS('readFile', 'output.gif');
+    const data = await ffmpegInstance.readFile('output.gif');
     const blob = new Blob([data.buffer], { type: 'image/gif' });
     const url = URL.createObjectURL(blob);
     
     // Cleanup
-    ffmpegInstance.FS('unlink', 'input.mp4');
-    ffmpegInstance.FS('unlink', 'output.gif');
+    await ffmpegInstance.deleteFile('input.mp4');
+    await ffmpegInstance.deleteFile('output.gif');
     
     return {
         url: url,
@@ -964,29 +964,29 @@ async function videoToMp3() {
     
     // Write video file
     const videoData = await uploadedFile.arrayBuffer();
-    ffmpegInstance.FS('writeFile', 'input.mp4', new Uint8Array(videoData));
+    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
     
     // Extract audio
     updateProgress(70, 'Converting to MP3...');
-    await ffmpegInstance.run(
+    await ffmpegInstance.exec([
         '-i', 'input.mp4',
         '-vn',
         '-ar', '44100',
         '-ac', '2',
         '-b:a', quality,
         'output.mp3'
-    );
+    ]);
     
     updateProgress(90, 'Finalizing audio...');
     
     // Read result
-    const data = ffmpegInstance.FS('readFile', 'output.mp3');
+    const data = await ffmpegInstance.readFile('output.mp3');
     const blob = new Blob([data.buffer], { type: 'audio/mpeg' });
     const url = URL.createObjectURL(blob);
     
     // Cleanup
-    ffmpegInstance.FS('unlink', 'input.mp4');
-    ffmpegInstance.FS('unlink', 'output.mp3');
+    await ffmpegInstance.deleteFile('input.mp4');
+    await ffmpegInstance.deleteFile('output.mp3');
     
     return {
         url: url,
@@ -1004,29 +1004,29 @@ async function gifToVideo() {
     
     // Write GIF file
     const gifData = await uploadedFile.arrayBuffer();
-    ffmpegInstance.FS('writeFile', 'input.gif', new Uint8Array(gifData));
+    await ffmpegInstance.writeFile('input.gif', new Uint8Array(gifData));
     
     // Convert to video
     updateProgress(70, 'Encoding video...');
-    await ffmpegInstance.run(
+    await ffmpegInstance.exec([
         '-i', 'input.gif',
         '-movflags', 'faststart',
         '-pix_fmt', 'yuv420p',
         '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
         `output.${format}`
-    );
+    ]);
     
     updateProgress(90, 'Finalizing video...');
     
     // Read result
-    const data = ffmpegInstance.FS('readFile', `output.${format}`);
+    const data = await ffmpegInstance.readFile(`output.${format}`);
     const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
     const blob = new Blob([data.buffer], { type: mimeType });
     const url = URL.createObjectURL(blob);
     
     // Cleanup
-    ffmpegInstance.FS('unlink', 'input.gif');
-    ffmpegInstance.FS('unlink', `output.${format}`);
+    await ffmpegInstance.deleteFile('input.gif');
+    await ffmpegInstance.deleteFile(`output.${format}`);
     
     return {
         url: url,
@@ -1046,11 +1046,11 @@ async function audioToVideo() {
     // Write audio file
     const audioData = await uploadedFile.arrayBuffer();
     const inputExt = uploadedFile.name.split('.').pop().toLowerCase();
-    ffmpegInstance.FS('writeFile', `input.${inputExt}`, new Uint8Array(audioData));
+    await ffmpegInstance.writeFile(`input.${inputExt}`, new Uint8Array(audioData));
     
     // Create video with waveform
     updateProgress(70, 'Creating waveform video...');
-    await ffmpegInstance.run(
+    await ffmpegInstance.exec([
         '-i', `input.${inputExt}`,
         '-filter_complex',
         `color=c=${bgColor.replace('#', '0x')}:s=1280x720[bg];[0:a]showwaves=s=1280x720:mode=line:rate=25:colors=${waveColor.replace('#', '0x')}[waves];[bg][waves]overlay=format=auto`,
@@ -1058,18 +1058,18 @@ async function audioToVideo() {
         '-c:a', 'aac',
         '-shortest',
         'output.mp4'
-    );
+    ]);
     
     updateProgress(90, 'Finalizing video...');
     
     // Read result
-    const data = ffmpegInstance.FS('readFile', 'output.mp4');
+    const data = await ffmpegInstance.readFile('output.mp4');
     const blob = new Blob([data.buffer], { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     
     // Cleanup
-    ffmpegInstance.FS('unlink', `input.${inputExt}`);
-    ffmpegInstance.FS('unlink', 'output.mp4');
+    await ffmpegInstance.deleteFile(`input.${inputExt}`);
+    await ffmpegInstance.deleteFile('output.mp4');
     
     return {
         url: url,
