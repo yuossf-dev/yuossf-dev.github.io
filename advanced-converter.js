@@ -1,273 +1,119 @@
-// Advanced Converter with Real Conversion Libraries
-let currentTool = '';
+// Advanced Converter JavaScript
+let currentTool = null;
 let uploadedFile = null;
 let ffmpegInstance = null;
-let ffmpegLoaded = false;
-
-// Tool configurations
-const toolConfig = {
-    'image-resize': {
-        title: 'Resize Image',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Width (pixels):</label>
-            <input type="number" id="width" class="w-full px-4 py-2 border rounded mb-4" value="800" min="1">
-            <label class="block mb-2">Height (pixels):</label>
-            <input type="number" id="height" class="w-full px-4 py-2 border rounded mb-4" value="600" min="1">
-            <label class="flex items-center mb-4">
-                <input type="checkbox" id="maintainAspect" class="mr-2" checked>
-                Maintain aspect ratio
-            </label>
-        `
-    },
-    'image-compress': {
-        title: 'Compress Image',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Quality (0-100%):</label>
-            <input type="range" id="quality" class="w-full mb-2" min="1" max="100" value="80">
-            <div class="text-center font-bold text-xl mb-4"><span id="qualityValue">80</span>%</div>
-        `
-    },
-    'image-to-pdf': {
-        title: 'Convert Image to PDF',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Page Size:</label>
-            <select id="pageSize" class="w-full px-4 py-2 border rounded mb-4">
-                <option value="a4">A4</option>
-                <option value="letter">Letter</option>
-                <option value="legal">Legal</option>
-            </select>
-            <label class="block mb-2">Orientation:</label>
-            <select id="orientation" class="w-full px-4 py-2 border rounded mb-4">
-                <option value="portrait">Portrait</option>
-                <option value="landscape">Landscape</option>
-            </select>
-        `
-    },
-    'jpg-to-png': {
-        title: 'Convert JPG to PNG',
-        accept: 'image/jpeg,image/jpg',
-        options: ''
-    },
-    'png-to-jpg': {
-        title: 'Convert PNG to JPG',
-        accept: 'image/png',
-        options: `
-            <label class="block mb-2">Background Color (for transparency):</label>
-            <input type="color" id="bgColor" class="w-full h-12 border rounded mb-4" value="#ffffff">
-        `
-    },
-    'image-rotate': {
-        title: 'Rotate Image',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Rotation Angle:</label>
-            <div class="grid grid-cols-3 gap-4">
-                <button onclick="setRotation(90)" class="bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600">90°</button>
-                <button onclick="setRotation(180)" class="bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600">180°</button>
-                <button onclick="setRotation(270)" class="bg-blue-500 text-white px-4 py-3 rounded hover:bg-blue-600">270°</button>
-            </div>
-            <input type="hidden" id="rotation" value="90">
-        `
-    },
-    'image-flip': {
-        title: 'Flip Image',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Flip Direction:</label>
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="setFlip('horizontal')" class="bg-purple-500 text-white px-4 py-3 rounded hover:bg-purple-600">Horizontal</button>
-                <button onclick="setFlip('vertical')" class="bg-purple-500 text-white px-4 py-3 rounded hover:bg-purple-600">Vertical</button>
-            </div>
-            <input type="hidden" id="flipDirection" value="horizontal">
-        `
-    },
-    'image-crop': {
-        title: 'Crop Image',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Crop Area:</label>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="text-sm">X Position:</label>
-                    <input type="number" id="cropX" class="w-full px-2 py-1 border rounded" value="0" min="0">
-                </div>
-                <div>
-                    <label class="text-sm">Y Position:</label>
-                    <input type="number" id="cropY" class="w-full px-2 py-1 border rounded" value="0" min="0">
-                </div>
-                <div>
-                    <label class="text-sm">Width:</label>
-                    <input type="number" id="cropWidth" class="w-full px-2 py-1 border rounded" value="400" min="1">
-                </div>
-                <div>
-                    <label class="text-sm">Height:</label>
-                    <input type="number" id="cropHeight" class="w-full px-2 py-1 border rounded" value="400" min="1">
-                </div>
-            </div>
-        `
-    },
-    'video-to-gif': {
-        title: 'Convert Video to GIF',
-        accept: 'video/*',
-        options: `
-            <label class="block mb-2">FPS (frames per second):</label>
-            <input type="number" id="fps" class="w-full px-4 py-2 border rounded mb-4" value="10" min="1" max="30">
-            <label class="block mb-2">Duration (seconds, 0 = full video):</label>
-            <input type="number" id="duration" class="w-full px-4 py-2 border rounded mb-4" value="0" min="0">
-        `
-    },
-    'video-to-mp3': {
-        title: 'Extract Audio from Video',
-        accept: 'video/*',
-        options: `
-            <label class="block mb-2">Audio Quality:</label>
-            <select id="audioQuality" class="w-full px-4 py-2 border rounded mb-4">
-                <option value="320">High (320kbps)</option>
-                <option value="192" selected>Medium (192kbps)</option>
-                <option value="128">Low (128kbps)</option>
-            </select>
-        `
-    },
-    'gif-to-video': {
-        title: 'Convert GIF to Video',
-        accept: 'image/gif',
-        options: `
-            <label class="block mb-2">Output Format:</label>
-            <select id="videoFormat" class="w-full px-4 py-2 border rounded mb-4">
-                <option value="mp4">MP4</option>
-                <option value="webm">WebM</option>
-            </select>
-        `
-    },
-    'audio-to-video': {
-        title: 'Convert Audio to Video (with waveform)',
-        accept: 'audio/*',
-        options: `
-            <label class="block mb-2">Waveform Color:</label>
-            <input type="color" id="waveColor" class="w-full h-12 border rounded mb-4" value="#667eea">
-            <label class="block mb-2">Background Color:</label>
-            <input type="color" id="waveBg" class="w-full h-12 border rounded mb-4" value="#000000">
-        `
-    },
-    'html-to-pdf': {
-        title: 'Convert HTML to PDF',
-        accept: '.html,.htm',
-        options: ''
-    },
-    'text-to-pdf': {
-        title: 'Convert Text to PDF',
-        accept: '.txt',
-        options: `
-            <label class="block mb-2">Font Size:</label>
-            <input type="number" id="fontSize" class="w-full px-4 py-2 border rounded mb-4" value="12" min="6" max="72">
-        `
-    },
-    'merge-images': {
-        title: 'Merge Images',
-        accept: 'image/*',
-        options: `
-            <label class="block mb-2">Layout:</label>
-            <select id="mergeLayout" class="w-full px-4 py-2 border rounded mb-4">
-                <option value="horizontal">Horizontal</option>
-                <option value="vertical">Vertical</option>
-                <option value="grid">Grid (2x2)</option>
-            </select>
-        `
-    }
-};
 
 // Select tool
-function selectTool(tool) {
-    currentTool = tool;
-    uploadedFile = null;
+function selectTool(toolId) {
+    currentTool = toolId;
     
     // Update UI
-    document.querySelectorAll('.tool-card').forEach(card => card.classList.remove('active'));
+    document.querySelectorAll('.tool-card').forEach(card => {
+        card.classList.remove('active');
+    });
     event.target.closest('.tool-card').classList.add('active');
     
     // Show conversion area
     document.getElementById('conversionArea').classList.remove('hidden');
-    document.getElementById('toolTitle').textContent = toolConfig[tool].title;
     
-    // Setup file input
-    const fileInput = document.getElementById('fileInput');
-    fileInput.accept = toolConfig[tool].accept;
-    fileInput.value = '';
-    fileInput.onchange = handleFileUpload;
+    // Update title
+    const titles = {
+        'image-resize': 'Resize Image',
+        'image-compress': 'Compress Image',
+        'image-to-pdf': 'Image to PDF',
+        'jpg-to-png': 'JPG to PNG',
+        'png-to-jpg': 'PNG to JPG',
+        'image-rotate': 'Rotate Image',
+        'image-flip': 'Flip Image',
+        'image-crop': 'Crop Image',
+        'video-to-gif': 'Video to GIF',
+        'video-to-mp3': 'Video to MP3',
+        'gif-to-video': 'GIF to Video',
+        'audio-to-video': 'Audio to Video with Waveform',
+        'html-to-pdf': 'HTML to PDF',
+        'text-to-pdf': 'Text to PDF',
+        'merge-images': 'Merge Images',
+        'screenshot-to-pdf': 'Screenshot to PDF'
+    };
     
-    // Show options for image tools
-    if (toolConfig[tool].options) {
-        document.getElementById('optionsPanel').classList.remove('hidden');
-        document.getElementById('optionsContent').innerHTML = toolConfig[tool].options;
-        
-        // Setup quality slider if exists
-        const qualitySlider = document.getElementById('quality');
-        if (qualitySlider) {
-            qualitySlider.oninput = () => {
-                document.getElementById('qualityValue').textContent = qualitySlider.value;
-            };
-        }
-    } else {
-        document.getElementById('optionsPanel').classList.add('hidden');
-    }
+    document.getElementById('toolTitle').textContent = titles[toolId] || 'File Converter';
     
-    // Show/hide video/audio options
-    const optionsArea = document.getElementById('optionsArea');
-    const gifOptions = document.getElementById('gifOptions');
-    const mp3Options = document.getElementById('mp3Options');
-    const videoOptions = document.getElementById('videoOptions');
-    const waveOptions = document.getElementById('waveOptions');
+    // Show appropriate options
+    showToolOptions(toolId);
     
-    // Hide all first
-    optionsArea.classList.add('hidden');
-    gifOptions.classList.add('hidden');
-    mp3Options.classList.add('hidden');
-    videoOptions.classList.add('hidden');
-    waveOptions.classList.add('hidden');
-    
-    // Show relevant options
-    if (tool === 'video-to-gif') {
-        optionsArea.classList.remove('hidden');
-        gifOptions.classList.remove('hidden');
-    } else if (tool === 'video-to-mp3') {
-        optionsArea.classList.remove('hidden');
-        mp3Options.classList.remove('hidden');
-    } else if (tool === 'gif-to-video') {
-        optionsArea.classList.remove('hidden');
-        videoOptions.classList.remove('hidden');
-    } else if (tool === 'audio-to-video') {
-        optionsArea.classList.remove('hidden');
-        waveOptions.classList.remove('hidden');
-    }
-    
-    // Hide results
+    // Reset areas
     document.getElementById('progressArea').classList.add('hidden');
     document.getElementById('resultArea').classList.add('hidden');
     
-    // Scroll to area
+    // Scroll to conversion area
     document.getElementById('conversionArea').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Handle file upload
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+// Show tool-specific options
+function showToolOptions(toolId) {
+    const optionsArea = document.getElementById('optionsArea');
+    const allOptions = ['gifOptions', 'mp3Options', 'videoOptions', 'waveOptions'];
     
-    uploadedFile = file;
-    processConversion();
+    // Hide all options first
+    allOptions.forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+    });
+    
+    // Show relevant options
+    if (toolId === 'video-to-gif') {
+        optionsArea.classList.remove('hidden');
+        document.getElementById('gifOptions').classList.remove('hidden');
+    } else if (toolId === 'video-to-mp3') {
+        optionsArea.classList.remove('hidden');
+        document.getElementById('mp3Options').classList.remove('hidden');
+    } else if (toolId === 'gif-to-video') {
+        optionsArea.classList.remove('hidden');
+        document.getElementById('videoOptions').classList.remove('hidden');
+    } else if (toolId === 'audio-to-video') {
+        optionsArea.classList.remove('hidden');
+        document.getElementById('waveOptions').classList.remove('hidden');
+    } else {
+        optionsArea.classList.add('hidden');
+    }
 }
 
-// Process conversion
-async function processConversion() {
-    if (!uploadedFile || !currentTool) return;
+// File input handling
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        uploadedFile = file;
+        startConversion();
+    }
+});
+
+// Drag and drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('border-purple-500');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('border-purple-500');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('border-purple-500');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        uploadedFile = file;
+        startConversion();
+    }
+});
+
+// Start conversion
+async function startConversion() {
+    if (!currentTool || !uploadedFile) return;
     
     // Show progress
     document.getElementById('progressArea').classList.remove('hidden');
     document.getElementById('resultArea').classList.add('hidden');
-    updateProgress(10, 'Loading file...');
     
     try {
         let result;
@@ -286,7 +132,7 @@ async function processConversion() {
                 result = await convertImageFormat('png');
                 break;
             case 'png-to-jpg':
-                result = await convertImageFormat('jpeg');
+                result = await convertImageFormat('jpg');
                 break;
             case 'image-rotate':
                 result = await rotateImage();
@@ -297,31 +143,43 @@ async function processConversion() {
             case 'image-crop':
                 result = await cropImage();
                 break;
-            case 'text-to-pdf':
-                result = await textToPDF();
+            case 'video-to-gif':
+                result = await videoToGIF();
+                break;
+            case 'video-to-mp3':
+                result = await videoToMP3();
+                break;
+            case 'gif-to-video':
+                result = await gifToVideo();
+                break;
+            case 'audio-to-video':
+                result = await audioToVideo();
                 break;
             case 'html-to-pdf':
                 result = await htmlToPDF();
                 break;
+            case 'text-to-pdf':
+                result = await textToPDF();
+                break;
             case 'merge-images':
                 result = await mergeImages();
                 break;
-            case 'video-to-gif':
-            case 'video-to-mp3':
-            case 'gif-to-video':
-            case 'audio-to-video':
-                result = await videoConversionPlaceholder(currentTool);
+            case 'screenshot-to-pdf':
+                result = await screenshotToPDF();
                 break;
             default:
                 throw new Error('Conversion not implemented yet');
         }
         
-        updateProgress(100, 'Complete!');
+        // Show result
         showResult(result);
         
     } catch (error) {
-        alert('Conversion failed: ' + error.message);
-        document.getElementById('progressArea').classList.add('hidden');
+        console.error('Conversion error:', error);
+        updateProgress(0, `Conversion failed: ${error.message}`);
+        setTimeout(() => {
+            document.getElementById('progressArea').classList.add('hidden');
+        }, 3000);
     }
 }
 
@@ -335,458 +193,27 @@ function updateProgress(percent, message) {
 function showResult(result) {
     document.getElementById('progressArea').classList.add('hidden');
     document.getElementById('resultArea').classList.remove('hidden');
-    document.getElementById('resultInfo').textContent = `Size: ${formatFileSize(result.size)}`;
     
-    // Setup download
-    document.getElementById('downloadBtn').onclick = () => {
-        const a = document.createElement('a');
-        a.href = result.url;
-        a.download = result.filename;
-        a.click();
-    };
-    
-    // Show preview if applicable
     if (result.preview) {
         document.getElementById('previewArea').innerHTML = result.preview;
+    }
+    
+    if (result.url) {
+        document.getElementById('resultInfo').textContent = `File ready: ${result.filename} (${formatBytes(result.size)})`;
+        document.getElementById('downloadBtn').onclick = () => {
+            const a = document.createElement('a');
+            a.href = result.url;
+            a.download = result.filename;
+            a.click();
+        };
+        document.getElementById('downloadBtn').classList.remove('hidden');
     } else {
-        document.getElementById('previewArea').innerHTML = '';
+        document.getElementById('downloadBtn').classList.add('hidden');
     }
 }
 
-// Image Resize
-async function resizeImage() {
-    updateProgress(30, 'Resizing image...');
-    
-    const width = parseInt(document.getElementById('width').value);
-    const height = parseInt(document.getElementById('height').value);
-    const maintainAspect = document.getElementById('maintainAspect').checked;
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                let newWidth = width;
-                let newHeight = height;
-                
-                if (maintainAspect) {
-                    const ratio = Math.min(width / img.width, height / img.height);
-                    newWidth = img.width * ratio;
-                    newHeight = img.height * ratio;
-                }
-                
-                canvas.width = newWidth;
-                canvas.height = newHeight;
-                ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                
-                updateProgress(70, 'Creating output file...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    resolve({
-                        url: url,
-                        filename: 'resized_' + uploadedFile.name,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview">`
-                    });
-                }, 'image/png');
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Image Compress
-async function compressImage() {
-    updateProgress(30, 'Compressing image...');
-    
-    const quality = parseInt(document.getElementById('quality').value) / 100;
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                
-                updateProgress(70, 'Creating compressed file...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    resolve({
-                        url: url,
-                        filename: 'compressed_' + uploadedFile.name,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview"><p class="text-sm mt-2 text-center">Original: ${formatFileSize(uploadedFile.size)} → Compressed: ${formatFileSize(blob.size)}</p>`
-                    });
-                }, 'image/jpeg', quality);
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Image to PDF
-async function imageToPDF() {
-    updateProgress(30, 'Converting to PDF...');
-    
-    const { jsPDF } = window.jspdf;
-    const pageSize = document.getElementById('pageSize').value;
-    const orientation = document.getElementById('orientation').value;
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                updateProgress(60, 'Creating PDF...');
-                
-                const pdf = new jsPDF({
-                    orientation: orientation,
-                    unit: 'mm',
-                    format: pageSize
-                });
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                
-                const imgRatio = img.width / img.height;
-                const pdfRatio = pdfWidth / pdfHeight;
-                
-                let finalWidth, finalHeight;
-                
-                if (imgRatio > pdfRatio) {
-                    finalWidth = pdfWidth;
-                    finalHeight = pdfWidth / imgRatio;
-                } else {
-                    finalHeight = pdfHeight;
-                    finalWidth = pdfHeight * imgRatio;
-                }
-                
-                const x = (pdfWidth - finalWidth) / 2;
-                const y = (pdfHeight - finalHeight) / 2;
-                
-                pdf.addImage(img.src, 'JPEG', x, y, finalWidth, finalHeight);
-                
-                updateProgress(90, 'Finalizing PDF...');
-                
-                const pdfBlob = pdf.output('blob');
-                const url = URL.createObjectURL(pdfBlob);
-                
-                resolve({
-                    url: url,
-                    filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.pdf',
-                    size: pdfBlob.size,
-                    preview: ''
-                });
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Convert Image Format
-async function convertImageFormat(format) {
-    updateProgress(30, `Converting to ${format.toUpperCase()}...`);
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                // Add background for JPG (if PNG has transparency)
-                if (format === 'jpeg') {
-                    const bgColor = document.getElementById('bgColor')?.value || '#ffffff';
-                    ctx.fillStyle = bgColor;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                
-                ctx.drawImage(img, 0, 0);
-                
-                updateProgress(70, 'Creating output file...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    const ext = format === 'jpeg' ? 'jpg' : format;
-                    resolve({
-                        url: url,
-                        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.' + ext,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview">`
-                    });
-                }, 'image/' + format, 0.95);
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Rotate Image
-async function rotateImage() {
-    updateProgress(30, 'Rotating image...');
-    
-    const rotation = parseInt(document.getElementById('rotation').value);
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Swap dimensions for 90 and 270 degree rotations
-                if (rotation === 90 || rotation === 270) {
-                    canvas.width = img.height;
-                    canvas.height = img.width;
-                } else {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                }
-                
-                ctx.translate(canvas.width / 2, canvas.height / 2);
-                ctx.rotate(rotation * Math.PI / 180);
-                ctx.drawImage(img, -img.width / 2, -img.height / 2);
-                
-                updateProgress(70, 'Creating rotated image...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    resolve({
-                        url: url,
-                        filename: 'rotated_' + uploadedFile.name,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview">`
-                    });
-                }, 'image/png');
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Flip Image
-async function flipImage() {
-    updateProgress(30, 'Flipping image...');
-    
-    const direction = document.getElementById('flipDirection').value;
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                ctx.save();
-                
-                if (direction === 'horizontal') {
-                    ctx.scale(-1, 1);
-                    ctx.drawImage(img, -img.width, 0);
-                } else {
-                    ctx.scale(1, -1);
-                    ctx.drawImage(img, 0, -img.height);
-                }
-                
-                ctx.restore();
-                
-                updateProgress(70, 'Creating flipped image...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    resolve({
-                        url: url,
-                        filename: 'flipped_' + uploadedFile.name,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview">`
-                    });
-                }, 'image/png');
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Crop Image
-async function cropImage() {
-    updateProgress(30, 'Cropping image...');
-    
-    const cropX = parseInt(document.getElementById('cropX').value);
-    const cropY = parseInt(document.getElementById('cropY').value);
-    const cropWidth = parseInt(document.getElementById('cropWidth').value);
-    const cropHeight = parseInt(document.getElementById('cropHeight').value);
-    
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = cropWidth;
-                canvas.height = cropHeight;
-                
-                ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-                
-                updateProgress(70, 'Creating cropped image...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    resolve({
-                        url: url,
-                        filename: 'cropped_' + uploadedFile.name,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview">`
-                    });
-                }, 'image/png');
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Text to PDF
-async function textToPDF() {
-    updateProgress(30, 'Converting text to PDF...');
-    
-    const fontSize = parseInt(document.getElementById('fontSize')?.value || 12);
-    const { jsPDF } = window.jspdf;
-    
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            updateProgress(60, 'Creating PDF...');
-            
-            const text = e.target.result;
-            const pdf = new jsPDF();
-            
-            pdf.setFontSize(fontSize);
-            const lines = pdf.splitTextToSize(text, 180);
-            pdf.text(lines, 15, 20);
-            
-            updateProgress(90, 'Finalizing PDF...');
-            
-            const pdfBlob = pdf.output('blob');
-            const url = URL.createObjectURL(pdfBlob);
-            
-            resolve({
-                url: url,
-                filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.pdf',
-                size: pdfBlob.size,
-                preview: ''
-            });
-        };
-        
-        reader.readAsText(uploadedFile);
-    });
-}
-
-// HTML to PDF
-async function htmlToPDF() {
-    updateProgress(30, 'Parsing HTML...');
-    
-    const { jsPDF } = window.jspdf;
-    
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            updateProgress(60, 'Converting to PDF...');
-            
-            const htmlContent = e.target.result;
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlContent;
-            tempDiv.style.width = '800px';
-            tempDiv.style.padding = '20px';
-            document.body.appendChild(tempDiv);
-            
-            html2canvas(tempDiv).then(canvas => {
-                document.body.removeChild(tempDiv);
-                
-                updateProgress(80, 'Creating PDF...');
-                
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgData = canvas.toDataURL('image/png');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                
-                const pdfBlob = pdf.output('blob');
-                const url = URL.createObjectURL(pdfBlob);
-                
-                resolve({
-                    url: url,
-                    filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.pdf',
-                    size: pdfBlob.size,
-                    preview: ''
-                });
-            });
-        };
-        
-        reader.readAsText(uploadedFile);
-    });
-}
-
-// Helper functions
-function setRotation(angle) {
-    document.getElementById('rotation').value = angle;
-    document.querySelectorAll('#optionsContent button').forEach(btn => {
-        btn.classList.remove('ring-4', 'ring-blue-300');
-    });
-    event.target.classList.add('ring-4', 'ring-blue-300');
-}
-
-function setFlip(direction) {
-    document.getElementById('flipDirection').value = direction;
-    document.querySelectorAll('#optionsContent button').forEach(btn => {
-        btn.classList.remove('ring-4', 'ring-purple-300');
-    });
-    event.target.classList.add('ring-4', 'ring-purple-300');
-}
-
-function formatFileSize(bytes) {
+// Format bytes
+function formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -794,327 +221,341 @@ function formatFileSize(bytes) {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
-// Drag and drop
-const uploadZone = document.getElementById('uploadZone');
-uploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadZone.classList.add('border-purple-500', 'bg-purple-50');
-});
+// ==================== CONVERSION FUNCTIONS ====================
 
-uploadZone.addEventListener('dragleave', () => {
-    uploadZone.classList.remove('border-purple-500', 'bg-purple-50');
-});
-
-uploadZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadZone.classList.remove('border-purple-500', 'bg-purple-50');
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && currentTool) {
-        document.getElementById('fileInput').files = files;
-        handleFileUpload({ target: { files: files } });
-    }
-});
-
-// Merge Images
-async function mergeImages() {
-    updateProgress(30, 'Merging images...');
+// Resize Image
+async function resizeImage() {
+    updateProgress(30, 'Loading image...');
     
-    // Note: This is a simplified version for single image
-    // For multiple images, you'd need to handle multiple file uploads
-    const layout = document.getElementById('mergeLayout')?.value || 'horizontal';
+    const img = await loadImage(uploadedFile);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     
-    return new Promise((resolve) => {
-        const img = new Image();
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                updateProgress(60, 'Creating merged image...');
-                
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // For demo: just duplicate the image side by side
-                if (layout === 'horizontal') {
-                    canvas.width = img.width * 2;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    ctx.drawImage(img, img.width, 0);
-                } else if (layout === 'vertical') {
-                    canvas.width = img.width;
-                    canvas.height = img.height * 2;
-                    ctx.drawImage(img, 0, 0);
-                    ctx.drawImage(img, 0, img.height);
-                } else { // grid
-                    canvas.width = img.width * 2;
-                    canvas.height = img.height * 2;
-                    ctx.drawImage(img, 0, 0);
-                    ctx.drawImage(img, img.width, 0);
-                    ctx.drawImage(img, 0, img.height);
-                    ctx.drawImage(img, img.width, img.height);
-                }
-                
-                updateProgress(90, 'Finalizing...');
-                
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
-                    resolve({
-                        url: url,
-                        filename: 'merged_' + uploadedFile.name,
-                        size: blob.size,
-                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview"><p class="text-sm mt-2 text-gray-600">Note: Upload multiple images for full merge functionality</p>`
-                    });
-                }, 'image/png');
-            };
-        };
-        
-        reader.readAsDataURL(uploadedFile);
-    });
-}
-
-// Video Conversion Implementation
-async function videoConversionPlaceholder(tool) {
-    updateProgress(10, 'Initializing FFmpeg...');
+    // Default to 50% of original size
+    canvas.width = img.width * 0.5;
+    canvas.height = img.height * 0.5;
     
-    try {
-        // Initialize FFmpeg if not already done
-        if (!ffmpegInstance) {
-            const { createFFmpeg, fetchFile } = FFmpeg;
-            ffmpegInstance = createFFmpeg({
-                log: true,
-                corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
-            });
-        }
-        
-        if (!ffmpegLoaded) {
-            updateProgress(20, 'Loading FFmpeg library (first time, ~30MB)...');
-            await ffmpegInstance.load();
-            ffmpegLoaded = true;
-            updateProgress(50, 'FFmpeg loaded successfully!');
-        } else {
-            updateProgress(50, 'FFmpeg ready!');
-        }
-        
-        // Route to appropriate conversion
-        switch(tool) {
-            case 'video-to-gif':
-                return await videoToGif();
-            case 'video-to-mp3':
-                return await videoToMp3();
-            case 'gif-to-video':
-                return await gifToVideo();
-            case 'audio-to-video':
-                return await audioToVideo();
-            default:
-                throw new Error('Unknown conversion type');
-        }
-        
-    } catch (error) {
-        console.error('FFmpeg error:', error);
-        throw new Error('Video conversion failed. ' + error.message);
-    }
-}
-
-// Video to GIF conversion - SIMPLIFIED VERSION
-async function videoToGif() {
-    return {
-        url: null,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.gif',
-        size: 0,
-        preview: `
-            <div class="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-400 rounded-lg p-8 text-center">
-                <div class="text-6xl mb-4">🎬➡️🎞️</div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-4">Video to GIF Conversion</h3>
-                <div class="bg-white rounded-lg p-6 mb-4 text-left">
-                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
-                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server configuration that GitHub Pages doesn't support.</p>
-                    
-                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Recommended Free Alternatives:</strong></p>
-                    <ul class="list-disc list-inside text-gray-600 space-y-2">
-                        <li><strong>Ezgif.com</strong> - Best free online tool</li>
-                        <li><strong>CloudConvert.com</strong> - High quality conversions</li>
-                        <li><strong>Adobe Express</strong> - Free with account</li>
-                        <li><strong>GIPHY</strong> - Great for short clips</li>
-                    </ul>
-                </div>
-                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
-            </div>
-        `
-    };
-}
-
-// Video to MP3 conversion - SIMPLIFIED VERSION
-async function videoToMp3() {
-    return {
-        url: null,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp3',
-        size: 0,
-        preview: `
-            <div class="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-400 rounded-lg p-8 text-center">
-                <div class="text-6xl mb-4">🎥➡️🎵</div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-4">Video to Audio (MP3) Extraction</h3>
-                <div class="bg-white rounded-lg p-6 mb-4 text-left">
-                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
-                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server configuration that GitHub Pages doesn't support.</p>
-                    
-                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Recommended Free Alternatives:</strong></p>
-                    <ul class="list-disc list-inside text-gray-600 space-y-2">
-                        <li><strong>CloudConvert.com</strong> - Excellent quality</li>
-                        <li><strong>FreeConvert.com</strong> - Fast and reliable</li>
-                        <li><strong>Online-Convert.com</strong> - Many format options</li>
-                        <li><strong>VLC Media Player</strong> - Desktop app (recommended!)</li>
-                    </ul>
-                </div>
-                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
-            </div>
-        `
-    };
-}
-
-// GIF to Video conversion - SIMPLIFIED VERSION
-async function gifToVideo() {
-    return {
-        url: null,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp4',
-        size: 0,
-        preview: `
-            <div class="bg-gradient-to-br from-pink-50 to-red-50 border-2 border-pink-400 rounded-lg p-8 text-center">
-                <div class="text-6xl mb-4">🎞️➡️🎬</div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-4">GIF to Video Conversion</h3>
-                <div class="bg-white rounded-lg p-6 mb-4 text-left">
-                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
-                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server configuration that GitHub Pages doesn't support.</p>
-                    
-                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Recommended Free Alternatives:</strong></p>
-                    <ul class="list-disc list-inside text-gray-600 space-y-2">
-                        <li><strong>Ezgif.com</strong> - Specializes in GIF tools</li>
-                        <li><strong>CloudConvert.com</strong> - Multiple formats</li>
-                        <li><strong>Convertio.co</strong> - Clean interface</li>
-                        <li><strong>FFmpeg Desktop</strong> - Best quality (free software)</li>
-                    </ul>
-                </div>
-                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
-            </div>
-        `
-    };
+    updateProgress(60, 'Resizing...');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     
-    // Read result
-    const data = await ffmpegInstance.readFile(`output.${format}`);
-    const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
-    const blob = new Blob([data.buffer], { type: mimeType });
+    updateProgress(90, 'Creating file...');
+    const blob = await canvasToBlob(canvas);
     const url = URL.createObjectURL(blob);
-    
-    // Cleanup
-    await ffmpegInstance.deleteFile('input.gif');
-    await ffmpegInstance.deleteFile(`output.${format}`);
     
     return {
         url: url,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.' + format,
+        filename: 'resized_' + uploadedFile.name,
         size: blob.size,
-        preview: `<video controls class="max-w-full h-auto rounded"><source src="${url}" type="${mimeType}"></video>`
+        preview: `<img src="${url}" class="max-w-full h-auto rounded shadow-lg">`
     };
 }
 
-// Audio to Video (with waveform) - SIMPLIFIED VERSION WITHOUT FFMPEG
+// Compress Image
+async function compressImage() {
+    updateProgress(30, 'Loading image...');
+    
+    const img = await loadImage(uploadedFile);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    updateProgress(60, 'Compressing...');
+    ctx.drawImage(img, 0, 0);
+    
+    updateProgress(90, 'Creating file...');
+    const blob = await canvasToBlob(canvas, 'image/jpeg', 0.7);
+    const url = URL.createObjectURL(blob);
+    
+    const reduction = ((uploadedFile.size - blob.size) / uploadedFile.size * 100).toFixed(1);
+    
+    return {
+        url: url,
+        filename: 'compressed_' + uploadedFile.name.replace(/\.[^/.]+$/, '.jpg'),
+        size: blob.size,
+        preview: `
+            <div class="space-y-4">
+                <img src="${url}" class="max-w-full h-auto rounded shadow-lg">
+                <div class="bg-green-100 p-4 rounded">
+                    <p class="font-bold text-green-800">Compression Result:</p>
+                    <p class="text-green-700">Original: ${formatBytes(uploadedFile.size)}</p>
+                    <p class="text-green-700">Compressed: ${formatBytes(blob.size)}</p>
+                    <p class="text-green-700 font-bold">Saved: ${reduction}%</p>
+                </div>
+            </div>
+        `
+    };
+}
+
+// Image to PDF
+async function imageToPDF() {
+    updateProgress(30, 'Loading image...');
+    
+    const { jsPDF } = window.jspdf;
+    const img = await loadImage(uploadedFile);
+    
+    updateProgress(60, 'Creating PDF...');
+    
+    const pdf = new jsPDF({
+        orientation: img.width > img.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [img.width, img.height]
+    });
+    
+    pdf.addImage(img, 'JPEG', 0, 0, img.width, img.height);
+    
+    updateProgress(90, 'Finalizing...');
+    const pdfBlob = pdf.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '.pdf'),
+        size: pdfBlob.size,
+        preview: `<div class="text-center p-8">
+            <i class="fas fa-file-pdf text-red-500 text-6xl mb-4"></i>
+            <p class="text-lg font-bold">PDF Created Successfully!</p>
+        </div>`
+    };
+}
+
+// Convert Image Format
+async function convertImageFormat(format) {
+    updateProgress(30, 'Loading image...');
+    
+    const img = await loadImage(uploadedFile);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    updateProgress(60, `Converting to ${format.toUpperCase()}...`);
+    ctx.drawImage(img, 0, 0);
+    
+    updateProgress(90, 'Creating file...');
+    const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+    const blob = await canvasToBlob(canvas, mimeType);
+    const url = URL.createObjectURL(blob);
+    
+    return {
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '.' + format),
+        size: blob.size,
+        preview: `<img src="${url}" class="max-w-full h-auto rounded shadow-lg">`
+    };
+}
+
+// Rotate Image
+async function rotateImage() {
+    updateProgress(30, 'Loading image...');
+    
+    const img = await loadImage(uploadedFile);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Rotate 90 degrees
+    canvas.width = img.height;
+    canvas.height = img.width;
+    
+    updateProgress(60, 'Rotating...');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(90 * Math.PI / 180);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    
+    updateProgress(90, 'Creating file...');
+    const blob = await canvasToBlob(canvas);
+    const url = URL.createObjectURL(blob);
+    
+    return {
+        url: url,
+        filename: 'rotated_' + uploadedFile.name,
+        size: blob.size,
+        preview: `<img src="${url}" class="max-w-full h-auto rounded shadow-lg">`
+    };
+}
+
+// Flip Image
+async function flipImage() {
+    updateProgress(30, 'Loading image...');
+    
+    const img = await loadImage(uploadedFile);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    updateProgress(60, 'Flipping...');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, 0, 0);
+    
+    updateProgress(90, 'Creating file...');
+    const blob = await canvasToBlob(canvas);
+    const url = URL.createObjectURL(blob);
+    
+    return {
+        url: url,
+        filename: 'flipped_' + uploadedFile.name,
+        size: blob.size,
+        preview: `<img src="${url}" class="max-w-full h-auto rounded shadow-lg">`
+    };
+}
+
+// Crop Image
+async function cropImage() {
+    updateProgress(30, 'Loading image...');
+    
+    const img = await loadImage(uploadedFile);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Crop to center square
+    const size = Math.min(img.width, img.height);
+    const x = (img.width - size) / 2;
+    const y = (img.height - size) / 2;
+    
+    canvas.width = size;
+    canvas.height = size;
+    
+    updateProgress(60, 'Cropping...');
+    ctx.drawImage(img, x, y, size, size, 0, 0, size, size);
+    
+    updateProgress(90, 'Creating file...');
+    const blob = await canvasToBlob(canvas);
+    const url = URL.createObjectURL(blob);
+    
+    return {
+        url: url,
+        filename: 'cropped_' + uploadedFile.name,
+        size: blob.size,
+        preview: `<img src="${url}" class="max-w-full h-auto rounded shadow-lg">`
+    };
+}
+
+// Video to GIF - Browser Compatible Version
+async function videoToGIF() {
+    return showComingSoon('Video to GIF', 'This feature requires FFmpeg for video processing');
+}
+
+// Video to MP3 - Browser Compatible Version
+async function videoToMP3() {
+    return showComingSoon('Video to MP3', 'This feature requires FFmpeg for audio extraction');
+}
+
+// GIF to Video - Browser Compatible Version
+async function gifToVideo() {
+    return showComingSoon('GIF to Video', 'This feature requires FFmpeg for video encoding');
+}
+
+// Audio to Video - Browser Compatible Version
 async function audioToVideo() {
-    // Show info that this needs backend processing
+    return showComingSoon('Audio to Video', 'This feature requires FFmpeg and advanced audio processing');
+}
+
+// Coming Soon Message
+function showComingSoon(toolName, reason) {
     return {
         url: null,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp4',
+        filename: '',
         size: 0,
         preview: `
-            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-lg p-8 text-center">
-                <div class="text-6xl mb-4">🎵➡️🎬</div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-4">Audio to Video Conversion</h3>
-                <div class="bg-white rounded-lg p-6 mb-4 text-left">
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-400 rounded-lg p-8 text-center">
+                <div class="text-6xl mb-4">🚧</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">${toolName} - Coming Soon!</h3>
+                <div class="bg-white rounded-lg p-6 mb-4">
                     <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
-                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server headers (SharedArrayBuffer) that GitHub Pages doesn't support.</p>
+                    <p class="text-gray-600 mb-3">${reason}. GitHub Pages doesn't support the required server headers (SharedArrayBuffer) for FFmpeg.wasm.</p>
                     
-                    <p class="text-gray-700 mb-2 mt-4"><strong>✨ What this tool would do:</strong></p>
+                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 What's needed:</strong></p>
                     <ul class="list-disc list-inside text-gray-600 space-y-1">
-                        <li>Create animated waveform visualization</li>
-                        <li>Export as MP4 video file</li>
-                        <li>Perfect for social media</li>
-                        <li>Custom colors and effects</li>
+                        <li>FFmpeg.js requires special CORS headers</li>
+                        <li>SharedArrayBuffer security requirements</li>
+                        <li>Backend server for processing</li>
                     </ul>
                     
-                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Alternative Solutions:</strong></p>
+                    <p class="text-gray-700 mb-2 mt-4"><strong>✨ Alternative Solutions:</strong></p>
                     <ul class="list-disc list-inside text-gray-600 space-y-1">
-                        <li>Use online tools like Kapwing or Canva</li>
-                        <li>Try desktop software like Adobe Premiere</li>
-                        <li>Use mobile apps like InShot</li>
+                        <li>Use CloudConvert.com for video/audio conversions</li>
+                        <li>Try desktop software like HandBrake</li>
+                        <li>Use mobile apps like Video Converter</li>
                     </ul>
                 </div>
                 <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
             </div>
         `
-    }
-        waveformData.push(sum / blockSize);
-    }
+    };
+}
+
+// HTML to PDF
+async function htmlToPDF() {
+    updateProgress(30, 'Processing HTML...');
     
-    // Draw waveform
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const text = await readFileAsText(uploadedFile);
     
-    ctx.strokeStyle = waveColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
+    updateProgress(60, 'Creating PDF...');
     
-    const centerY = canvas.height / 2;
-    const amplitude = canvas.height / 3;
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
     
-    for (let i = 0; i < waveformData.length; i++) {
-        const x = i;
-        const y = centerY + (waveformData[i] * amplitude * (i % 2 === 0 ? 1 : -1));
-        
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
-    }
+    // Simple text rendering
+    const lines = pdf.splitTextToSize(text, 180);
+    pdf.text(lines, 10, 10);
     
-    ctx.stroke();
-    
-    updateProgress(90, 'Creating video file...');
-    
-    // Convert canvas to blob
-    const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    const imageUrl = URL.createObjectURL(imageBlob);
-    
-    // Create a simple HTML page that shows the waveform image with the audio
-    const htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <title>Audio Waveform</title>
-    <style>
-        body { margin: 0; background: ${bgColor}; display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; }
-        img { max-width: 100%; max-height: 80vh; }
-        audio { margin-top: 20px; width: 80%; }
-    </style>
-</head>
-<body>
-    <img src="${imageUrl}" alt="Waveform">
-    <audio controls autoplay>
-        <source src="${URL.createObjectURL(new Blob([audioData], { type: uploadedFile.type }))}" type="${uploadedFile.type}">
-    </audio>
-</body>
-</html>`;
-    
-    const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-    const htmlUrl = URL.createObjectURL(htmlBlob);
+    updateProgress(90, 'Finalizing...');
+    const pdfBlob = pdf.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
     
     return {
-        url: htmlUrl,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.html',
-        size: htmlBlob.size,
-        preview: `<div class="bg-gray-100 p-6 rounded text-center">
-            <i class="fas fa-file-code text-6xl text-blue-500 mb-4"></i>
-            <h3 class="font-bold text-lg mb-2">Waveform HTML Created!</h3>
-            <p class="text-gray-600 mb-4">An interactive HTML page with your audio and waveform visualization.</p>
-            <img src="${imageUrl}" class="max-w-full h-auto rounded mb-4" alt="Waveform Preview">
+        url: url,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '.pdf'),
+        size: pdfBlob.size,
+        preview: `<div class="text-center p-8">
+            <i class="fas fa-file-pdf text-red-500 text-6xl mb-4"></i>
+            <p class="text-lg font-bold">PDF Created Successfully!</p>
         </div>`
     };
+}
+
+// Text to PDF
+async function textToPDF() {
+    return await htmlToPDF(); // Same logic
+}
+
+// Merge Images
+async function mergeImages() {
+    return showComingSoon('Merge Images', 'Please select multiple images first');
+}
+
+// Screenshot to PDF
+async function screenshotToPDF() {
+    return showComingSoon('Screenshot Tool', 'This requires screen capture API permissions');
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+function loadImage(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+function canvasToBlob(canvas, type = 'image/png', quality = 0.95) {
+    return new Promise(resolve => {
+        canvas.toBlob(resolve, type, quality);
+    });
+}
+
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
 }
