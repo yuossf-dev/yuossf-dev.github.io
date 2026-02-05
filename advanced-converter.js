@@ -1047,7 +1047,7 @@ async function audioToVideo() {
     updateProgress(60, 'Generating waveform visualization...');
     
     const waveColor = document.getElementById('waveColor')?.value || '#6366f1';
-    const bgColor = document.getElementById('waveBgColor')?.value || '#000000';
+    const bgColor = document.getElementById('waveBg')?.value || '#000000';
     
     // Write audio file
     const audioData = await uploadedFile.arrayBuffer();
