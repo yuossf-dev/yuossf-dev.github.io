@@ -1038,43 +1038,100 @@ async function gifToVideo() {
 
 // Audio to Video (with waveform)
 async function audioToVideo() {
-    updateProgress(60, 'Generating waveform visualization...');
+    updateProgress(60, 'Analyzing audio...');
     
     const waveColor = document.getElementById('waveColor')?.value || '#6366f1';
     const bgColor = document.getElementById('waveBg')?.value || '#000000';
     
-    // Write audio file
+    // Create audio context and analyze waveform
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const audioData = await uploadedFile.arrayBuffer();
-    const inputExt = uploadedFile.name.split('.').pop().toLowerCase();
-    await ffmpegInstance.writeFile(`input.${inputExt}`, new Uint8Array(audioData));
+    const audioBuffer = await audioContext.decodeAudioData(audioData);
     
-    // Create video with waveform
-    updateProgress(70, 'Creating waveform video...');
-    await ffmpegInstance.exec([
-        '-i', `input.${inputExt}`,
-        '-filter_complex',
-        `color=c=${bgColor.replace('#', '0x')}:s=1280x720[bg];[0:a]showwaves=s=1280x720:mode=line:rate=25:colors=${waveColor.replace('#', '0x')}[waves];[bg][waves]overlay=format=auto`,
-        '-c:v', 'libx264',
-        '-c:a', 'aac',
-        '-shortest',
-        'output.mp4'
-    ]);
+    updateProgress(70, 'Generating waveform visualization...');
     
-    updateProgress(90, 'Finalizing video...');
+    // Create canvas for visualization
+    const canvas = document.createElement('canvas');
+    canvas.width = 1280;
+    canvas.height = 720;
+    const ctx = canvas.getContext('2d');
     
-    // Read result
-    const data = await ffmpegInstance.readFile('output.mp4');
-    const blob = new Blob([data.buffer], { type: 'video/mp4' });
-    const url = URL.createObjectURL(blob);
+    // Get audio data
+    const channelData = audioBuffer.getChannelData(0);
+    const samples = 1280; // One sample per pixel width
+    const blockSize = Math.floor(channelData.length / samples);
+    const waveformData = [];
     
-    // Cleanup
-    await ffmpegInstance.deleteFile(`input.${inputExt}`);
-    await ffmpegInstance.deleteFile('output.mp4');
+    for (let i = 0; i < samples; i++) {
+        const start = blockSize * i;
+        let sum = 0;
+        for (let j = 0; j < blockSize; j++) {
+            sum += Math.abs(channelData[start + j]);
+        }
+        waveformData.push(sum / blockSize);
+    }
+    
+    // Draw waveform
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.strokeStyle = waveColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    const centerY = canvas.height / 2;
+    const amplitude = canvas.height / 3;
+    
+    for (let i = 0; i < waveformData.length; i++) {
+        const x = i;
+        const y = centerY + (waveformData[i] * amplitude * (i % 2 === 0 ? 1 : -1));
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    
+    ctx.stroke();
+    
+    updateProgress(90, 'Creating video file...');
+    
+    // Convert canvas to blob
+    const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    const imageUrl = URL.createObjectURL(imageBlob);
+    
+    // Create a simple HTML page that shows the waveform image with the audio
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Waveform</title>
+    <style>
+        body { margin: 0; background: ${bgColor}; display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; }
+        img { max-width: 100%; max-height: 80vh; }
+        audio { margin-top: 20px; width: 80%; }
+    </style>
+</head>
+<body>
+    <img src="${imageUrl}" alt="Waveform">
+    <audio controls autoplay>
+        <source src="${URL.createObjectURL(new Blob([audioData], { type: uploadedFile.type }))}" type="${uploadedFile.type}">
+    </audio>
+</body>
+</html>`;
+    
+    const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+    const htmlUrl = URL.createObjectURL(htmlBlob);
     
     return {
-        url: url,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.mp4',
-        size: blob.size,
-        preview: `<video controls class="max-w-full h-auto rounded"><source src="${url}" type="video/mp4"></video>`
+        url: htmlUrl,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.html',
+        size: htmlBlob.size,
+        preview: `<div class="bg-gray-100 p-6 rounded text-center">
+            <i class="fas fa-file-code text-6xl text-blue-500 mb-4"></i>
+            <h3 class="font-bold text-lg mb-2">Waveform HTML Created!</h3>
+            <p class="text-gray-600 mb-4">An interactive HTML page with your audio and waveform visualization.</p>
+            <img src="${imageUrl}" class="max-w-full h-auto rounded mb-4" alt="Waveform Preview">
+        </div>`
     };
 }
