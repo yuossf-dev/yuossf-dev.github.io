@@ -916,107 +916,88 @@ async function videoConversionPlaceholder(tool) {
     }
 }
 
-// Video to GIF conversion
+// Video to GIF conversion - SIMPLIFIED VERSION
 async function videoToGif() {
-    updateProgress(60, 'Converting video to GIF...');
-    
-    const fps = document.getElementById('gifFps')?.value || 10;
-    const duration = document.getElementById('gifDuration')?.value || 5;
-    
-    // Write video file to FFmpeg virtual filesystem
-    const videoData = await uploadedFile.arrayBuffer();
-    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
-    
-    // Run FFmpeg command
-    updateProgress(70, 'Processing frames...');
-    await ffmpegInstance.exec([
-        '-i', 'input.mp4',
-        '-t', String(duration),
-        '-vf', `fps=${fps},scale=640:-1:flags=lanczos`,
-        '-loop', '0',
-        'output.gif'
-    ]);
-    
-    updateProgress(90, 'Finalizing GIF...');
-    
-    // Read the result
-    const data = await ffmpegInstance.readFile('output.gif');
-    const blob = new Blob([data.buffer], { type: 'image/gif' });
-    const url = URL.createObjectURL(blob);
-    
-    // Cleanup
-    await ffmpegInstance.deleteFile('input.mp4');
-    await ffmpegInstance.deleteFile('output.gif');
-    
     return {
-        url: url,
+        url: null,
         filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.gif',
-        size: blob.size,
-        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="GIF Preview">`
+        size: 0,
+        preview: `
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-400 rounded-lg p-8 text-center">
+                <div class="text-6xl mb-4">🎬➡️🎞️</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Video to GIF Conversion</h3>
+                <div class="bg-white rounded-lg p-6 mb-4 text-left">
+                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
+                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server configuration that GitHub Pages doesn't support.</p>
+                    
+                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Recommended Free Alternatives:</strong></p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li><strong>Ezgif.com</strong> - Best free online tool</li>
+                        <li><strong>CloudConvert.com</strong> - High quality conversions</li>
+                        <li><strong>Adobe Express</strong> - Free with account</li>
+                        <li><strong>GIPHY</strong> - Great for short clips</li>
+                    </ul>
+                </div>
+                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
+            </div>
+        `
     };
 }
 
-// Video to MP3 conversion
+// Video to MP3 conversion - SIMPLIFIED VERSION
 async function videoToMp3() {
-    updateProgress(60, 'Extracting audio...');
-    
-    const quality = document.getElementById('audioQuality')?.value || '192k';
-    
-    // Write video file
-    const videoData = await uploadedFile.arrayBuffer();
-    await ffmpegInstance.writeFile('input.mp4', new Uint8Array(videoData));
-    
-    // Extract audio
-    updateProgress(70, 'Converting to MP3...');
-    await ffmpegInstance.exec([
-        '-i', 'input.mp4',
-        '-vn',
-        '-ar', '44100',
-        '-ac', '2',
-        '-b:a', quality,
-        'output.mp3'
-    ]);
-    
-    updateProgress(90, 'Finalizing audio...');
-    
-    // Read result
-    const data = await ffmpegInstance.readFile('output.mp3');
-    const blob = new Blob([data.buffer], { type: 'audio/mpeg' });
-    const url = URL.createObjectURL(blob);
-    
-    // Cleanup
-    await ffmpegInstance.deleteFile('input.mp4');
-    await ffmpegInstance.deleteFile('output.mp3');
-    
     return {
-        url: url,
+        url: null,
         filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp3',
-        size: blob.size,
-        preview: `<audio controls class="w-full"><source src="${url}" type="audio/mpeg"></audio>`
+        size: 0,
+        preview: `
+            <div class="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-400 rounded-lg p-8 text-center">
+                <div class="text-6xl mb-4">🎥➡️🎵</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Video to Audio (MP3) Extraction</h3>
+                <div class="bg-white rounded-lg p-6 mb-4 text-left">
+                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
+                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server configuration that GitHub Pages doesn't support.</p>
+                    
+                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Recommended Free Alternatives:</strong></p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li><strong>CloudConvert.com</strong> - Excellent quality</li>
+                        <li><strong>FreeConvert.com</strong> - Fast and reliable</li>
+                        <li><strong>Online-Convert.com</strong> - Many format options</li>
+                        <li><strong>VLC Media Player</strong> - Desktop app (recommended!)</li>
+                    </ul>
+                </div>
+                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
+            </div>
+        `
     };
 }
 
-// GIF to Video conversion
+// GIF to Video conversion - SIMPLIFIED VERSION
 async function gifToVideo() {
-    updateProgress(60, 'Converting GIF to video...');
-    
-    const format = document.getElementById('videoFormat')?.value || 'mp4';
-    
-    // Write GIF file
-    const gifData = await uploadedFile.arrayBuffer();
-    await ffmpegInstance.writeFile('input.gif', new Uint8Array(gifData));
-    
-    // Convert to video
-    updateProgress(70, 'Encoding video...');
-    await ffmpegInstance.exec([
-        '-i', 'input.gif',
-        '-movflags', 'faststart',
-        '-pix_fmt', 'yuv420p',
-        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-        `output.${format}`
-    ]);
-    
-    updateProgress(90, 'Finalizing video...');
+    return {
+        url: null,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp4',
+        size: 0,
+        preview: `
+            <div class="bg-gradient-to-br from-pink-50 to-red-50 border-2 border-pink-400 rounded-lg p-8 text-center">
+                <div class="text-6xl mb-4">🎞️➡️🎬</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">GIF to Video Conversion</h3>
+                <div class="bg-white rounded-lg p-6 mb-4 text-left">
+                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
+                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server configuration that GitHub Pages doesn't support.</p>
+                    
+                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Recommended Free Alternatives:</strong></p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li><strong>Ezgif.com</strong> - Specializes in GIF tools</li>
+                        <li><strong>CloudConvert.com</strong> - Multiple formats</li>
+                        <li><strong>Convertio.co</strong> - Clean interface</li>
+                        <li><strong>FFmpeg Desktop</strong> - Best quality (free software)</li>
+                    </ul>
+                </div>
+                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
+            </div>
+        `
+    };
     
     // Read result
     const data = await ffmpegInstance.readFile(`output.${format}`);
@@ -1036,38 +1017,40 @@ async function gifToVideo() {
     };
 }
 
-// Audio to Video (with waveform)
+// Audio to Video (with waveform) - SIMPLIFIED VERSION WITHOUT FFMPEG
 async function audioToVideo() {
-    updateProgress(60, 'Analyzing audio...');
-    
-    const waveColor = document.getElementById('waveColor')?.value || '#6366f1';
-    const bgColor = document.getElementById('waveBg')?.value || '#000000';
-    
-    // Create audio context and analyze waveform
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const audioData = await uploadedFile.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(audioData);
-    
-    updateProgress(70, 'Generating waveform visualization...');
-    
-    // Create canvas for visualization
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 720;
-    const ctx = canvas.getContext('2d');
-    
-    // Get audio data
-    const channelData = audioBuffer.getChannelData(0);
-    const samples = 1280; // One sample per pixel width
-    const blockSize = Math.floor(channelData.length / samples);
-    const waveformData = [];
-    
-    for (let i = 0; i < samples; i++) {
-        const start = blockSize * i;
-        let sum = 0;
-        for (let j = 0; j < blockSize; j++) {
-            sum += Math.abs(channelData[start + j]);
-        }
+    // Show info that this needs backend processing
+    return {
+        url: null,
+        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp4',
+        size: 0,
+        preview: `
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-lg p-8 text-center">
+                <div class="text-6xl mb-4">🎵➡️🎬</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Audio to Video Conversion</h3>
+                <div class="bg-white rounded-lg p-6 mb-4 text-left">
+                    <p class="text-gray-700 mb-3"><strong>⚠️ Technical Limitation:</strong></p>
+                    <p class="text-gray-600 mb-3">This feature requires FFmpeg.js which needs special server headers (SharedArrayBuffer) that GitHub Pages doesn't support.</p>
+                    
+                    <p class="text-gray-700 mb-2 mt-4"><strong>✨ What this tool would do:</strong></p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1">
+                        <li>Create animated waveform visualization</li>
+                        <li>Export as MP4 video file</li>
+                        <li>Perfect for social media</li>
+                        <li>Custom colors and effects</li>
+                    </ul>
+                    
+                    <p class="text-gray-700 mb-2 mt-4"><strong>💡 Alternative Solutions:</strong></p>
+                    <ul class="list-disc list-inside text-gray-600 space-y-1">
+                        <li>Use online tools like Kapwing or Canva</li>
+                        <li>Try desktop software like Adobe Premiere</li>
+                        <li>Use mobile apps like InShot</li>
+                    </ul>
+                </div>
+                <p class="text-sm text-gray-500">Your file: <strong>${uploadedFile.name}</strong> (${formatBytes(uploadedFile.size)})</p>
+            </div>
+        `
+    }
         waveformData.push(sum / blockSize);
     }
     
