@@ -274,6 +274,15 @@ async function processConversion() {
             case 'html-to-pdf':
                 result = await htmlToPDF();
                 break;
+            case 'merge-images':
+                result = await mergeImages();
+                break;
+            case 'video-to-gif':
+            case 'video-to-mp3':
+            case 'gif-to-video':
+            case 'audio-to-video':
+                result = await videoConversionPlaceholder(currentTool);
+                break;
             default:
                 throw new Error('Conversion not implemented yet');
         }
@@ -776,3 +785,142 @@ uploadZone.addEventListener('drop', (e) => {
         handleFileUpload({ target: { files: files } });
     }
 });
+
+// Merge Images
+async function mergeImages() {
+    updateProgress(30, 'Merging images...');
+    
+    // Note: This is a simplified version for single image
+    // For multiple images, you'd need to handle multiple file uploads
+    const layout = document.getElementById('mergeLayout')?.value || 'horizontal';
+    
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            img.src = e.target.result;
+            img.onload = () => {
+                updateProgress(60, 'Creating merged image...');
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // For demo: just duplicate the image side by side
+                if (layout === 'horizontal') {
+                    canvas.width = img.width * 2;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, img.width, 0);
+                } else if (layout === 'vertical') {
+                    canvas.width = img.width;
+                    canvas.height = img.height * 2;
+                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, 0, img.height);
+                } else { // grid
+                    canvas.width = img.width * 2;
+                    canvas.height = img.height * 2;
+                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, img.width, 0);
+                    ctx.drawImage(img, 0, img.height);
+                    ctx.drawImage(img, img.width, img.height);
+                }
+                
+                updateProgress(90, 'Finalizing...');
+                
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    resolve({
+                        url: url,
+                        filename: 'merged_' + uploadedFile.name,
+                        size: blob.size,
+                        preview: `<img src="${url}" class="max-w-full h-auto rounded" alt="Preview"><p class="text-sm mt-2 text-gray-600">Note: Upload multiple images for full merge functionality</p>`
+                    });
+                }, 'image/png');
+            };
+        };
+        
+        reader.readAsDataURL(uploadedFile);
+    });
+}
+
+// Video Conversion Placeholder
+async function videoConversionPlaceholder(tool) {
+    updateProgress(30, 'Preparing conversion...');
+    
+    const toolNames = {
+        'video-to-gif': 'Video to GIF',
+        'video-to-mp3': 'Video to MP3',
+        'gif-to-video': 'GIF to Video',
+        'audio-to-video': 'Audio to Video with Waveform'
+    };
+    
+    // Create an info card instead of failing
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const infoHTML = `
+                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-yellow-600 text-3xl mr-4"></i>
+                        <div>
+                            <h4 class="font-bold text-lg text-yellow-800 mb-2">${toolNames[tool]} - Coming Soon!</h4>
+                            <p class="text-yellow-700 mb-4">This advanced feature requires FFmpeg.wasm library activation.</p>
+                            <div class="bg-white rounded p-4 mb-3">
+                                <p class="font-semibold mb-2">What this tool will do:</p>
+                                <ul class="list-disc ml-5 text-sm space-y-1">
+                                    ${getToolFeatures(tool)}
+                                </ul>
+                            </div>
+                            <p class="text-sm text-yellow-600">
+                                <i class="fas fa-rocket mr-1"></i> 
+                                <strong>Why not available yet?</strong> FFmpeg adds 30MB download size. 
+                                We're keeping the site fast for now!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Create a dummy blob
+            const dummyBlob = new Blob(['Coming soon'], { type: 'text/plain' });
+            const url = URL.createObjectURL(dummyBlob);
+            
+            resolve({
+                url: url,
+                filename: 'coming_soon.txt',
+                size: dummyBlob.size,
+                preview: infoHTML
+            });
+        }, 1000);
+    });
+}
+
+function getToolFeatures(tool) {
+    const features = {
+        'video-to-gif': `
+            <li>Convert video clips to animated GIFs</li>
+            <li>Adjustable frame rate (FPS)</li>
+            <li>Custom duration selection</li>
+            <li>Optimized file size</li>
+        `,
+        'video-to-mp3': `
+            <li>Extract audio from any video</li>
+            <li>Multiple quality options (128-320kbps)</li>
+            <li>Fast conversion</li>
+            <li>Supports all video formats</li>
+        `,
+        'gif-to-video': `
+            <li>Convert GIF to MP4 or WebM</li>
+            <li>Better compression</li>
+            <li>Smaller file sizes</li>
+            <li>Compatible with all players</li>
+        `,
+        'audio-to-video': `
+            <li>Create video from audio file</li>
+            <li>Beautiful waveform visualization</li>
+            <li>Custom colors and background</li>
+            <li>Perfect for social media</li>
+        `
+    };
+    return features[tool] || '<li>Advanced conversion features</li>';
+}
