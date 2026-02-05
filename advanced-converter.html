@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced file converter with real conversion capabilities - Images, Audio, Video and more!">
+    <title>Advanced Converter - The Best Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6123398137525980" crossorigin="anonymous"></script>
+    
+    <!-- Conversion Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .tool-card { transition: all 0.3s ease; cursor: pointer; }
+        .tool-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .tool-card.active { border-color: #7c3aed; background: #f3e8ff; }
+        #progressBar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-magic text-3xl"></i>
+                    <h1 class="text-2xl font-bold">Advanced Converter</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6 text-sm">
+                    <a href="/" class="hover:text-gray-200">Home</a>
+                    <a href="/converter.html" class="hover:text-gray-200">Basic Tools</a>
+                    <a href="/all-formats.html" class="hover:text-gray-200">All Formats</a>
+                    <a href="/advanced-converter.html" class="hover:text-gray-200 font-bold">Advanced</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">Advanced File Converter</h2>
+        <p class="text-center text-gray-600 mb-8">Real-time conversions with powerful libraries - All processing in your browser!</p>
+
+        <!-- Conversion Tools Grid -->
+        <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Image Conversions -->
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('image-resize')">
+                <i class="fas fa-expand-arrows-alt text-3xl text-blue-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Resize Image</h3>
+                <p class="text-xs text-gray-500">Change dimensions</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('image-compress')">
+                <i class="fas fa-compress text-3xl text-green-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Compress Image</h3>
+                <p class="text-xs text-gray-500">Reduce file size</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('image-to-pdf')">
+                <i class="fas fa-file-pdf text-3xl text-red-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Image to PDF</h3>
+                <p class="text-xs text-gray-500">Convert to PDF</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('jpg-to-png')">
+                <i class="fas fa-image text-3xl text-purple-500 mb-2"></i>
+                <h3 class="font-bold text-sm">JPG to PNG</h3>
+                <p class="text-xs text-gray-500">Convert format</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('png-to-jpg')">
+                <i class="fas fa-image text-3xl text-purple-500 mb-2"></i>
+                <h3 class="font-bold text-sm">PNG to JPG</h3>
+                <p class="text-xs text-gray-500">Convert format</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('image-rotate')">
+                <i class="fas fa-redo text-3xl text-orange-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Rotate Image</h3>
+                <p class="text-xs text-gray-500">90°, 180°, 270°</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('image-flip')">
+                <i class="fas fa-arrows-alt-h text-3xl text-teal-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Flip Image</h3>
+                <p class="text-xs text-gray-500">Horizontal/Vertical</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('image-crop')">
+                <i class="fas fa-crop text-3xl text-indigo-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Crop Image</h3>
+                <p class="text-xs text-gray-500">Custom size</p>
+            </div>
+            
+            <!-- Video Conversions (Advanced) -->
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('video-to-gif')">
+                <i class="fas fa-film text-3xl text-pink-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Video to GIF</h3>
+                <p class="text-xs text-gray-500">Create GIF</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('video-to-mp3')">
+                <i class="fas fa-music text-3xl text-green-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Video to MP3</h3>
+                <p class="text-xs text-gray-500">Extract audio</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('gif-to-video')">
+                <i class="fas fa-video text-3xl text-red-500 mb-2"></i>
+                <h3 class="font-bold text-sm">GIF to Video</h3>
+                <p class="text-xs text-gray-500">MP4 format</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('audio-to-video')">
+                <i class="fas fa-compact-disc text-3xl text-yellow-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Audio to Video</h3>
+                <p class="text-xs text-gray-500">Add visualization</p>
+            </div>
+            
+            <!-- PDF Tools -->
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('html-to-pdf')">
+                <i class="fas fa-code text-3xl text-blue-500 mb-2"></i>
+                <h3 class="font-bold text-sm">HTML to PDF</h3>
+                <p class="text-xs text-gray-500">Convert webpage</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('text-to-pdf')">
+                <i class="fas fa-file-alt text-3xl text-gray-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Text to PDF</h3>
+                <p class="text-xs text-gray-500">Plain text</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('merge-images')">
+                <i class="fas fa-layer-group text-3xl text-purple-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Merge Images</h3>
+                <p class="text-xs text-gray-500">Combine multiple</p>
+            </div>
+            
+            <div class="tool-card bg-white p-4 rounded-lg border-2 border-gray-200" onclick="selectTool('screenshot-to-pdf')">
+                <i class="fas fa-desktop text-3xl text-cyan-500 mb-2"></i>
+                <h3 class="font-bold text-sm">Screenshot Tool</h3>
+                <p class="text-xs text-gray-500">Capture & save</p>
+            </div>
+        </div>
+
+        <!-- Conversion Area -->
+        <div id="conversionArea" class="bg-white rounded-xl shadow-2xl p-8 hidden">
+            <h3 class="text-2xl font-bold mb-6 text-gray-800" id="toolTitle">Select a Tool Above</h3>
+            
+            <!-- File Upload -->
+            <div id="uploadZone" class="border-4 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-purple-500 transition cursor-pointer">
+                <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                <h4 class="text-xl font-semibold mb-2">Drop your file here</h4>
+                <p class="text-gray-500 mb-4">or click to browse</p>
+                <input type="file" id="fileInput" class="hidden" accept="*/*">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-purple-600 text-white px-8 py-3 rounded-full font-bold hover:bg-purple-700 transition">
+                    <i class="fas fa-folder-open mr-2"></i>Choose File
+                </button>
+            </div>
+
+            <!-- Options Panel -->
+            <div id="optionsPanel" class="mt-8 hidden">
+                <h4 class="font-bold text-lg mb-4">Conversion Options:</h4>
+                <div id="optionsContent" class="space-y-4"></div>
+            </div>
+
+            <!-- Progress -->
+            <div id="progressArea" class="mt-8 hidden">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-4">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-cog fa-spin text-blue-500 text-2xl mr-3"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-blue-800">Processing...</h4>
+                            <p class="text-sm text-blue-600" id="statusText">Preparing conversion</p>
+                        </div>
+                    </div>
+                    <div class="w-full bg-blue-200 rounded-full h-4 mt-2">
+                        <div id="progressBar" class="bg-blue-600 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview & Download -->
+            <div id="resultArea" class="mt-8 hidden">
+                <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 text-3xl mr-4"></i>
+                            <div>
+                                <h4 class="font-bold text-green-800 text-lg">Conversion Complete!</h4>
+                                <p class="text-sm text-green-600" id="resultInfo">Ready to download</p>
+                            </div>
+                        </div>
+                        <button id="downloadBtn" class="bg-green-600 text-white px-8 py-3 rounded-full font-bold hover:bg-green-700 transition">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </button>
+                    </div>
+                    <div id="previewArea" class="mt-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="grid md:grid-cols-4 gap-4 mt-12">
+            <div class="bg-blue-50 p-6 rounded-lg text-center">
+                <i class="fas fa-rocket text-4xl text-blue-600 mb-3"></i>
+                <h4 class="font-bold mb-2">Fast Processing</h4>
+                <p class="text-sm text-gray-600">Instant conversions</p>
+            </div>
+            <div class="bg-green-50 p-6 rounded-lg text-center">
+                <i class="fas fa-lock text-4xl text-green-600 mb-3"></i>
+                <h4 class="font-bold mb-2">100% Private</h4>
+                <p class="text-sm text-gray-600">Browser-based only</p>
+            </div>
+            <div class="bg-purple-50 p-6 rounded-lg text-center">
+                <i class="fas fa-infinity text-4xl text-purple-600 mb-3"></i>
+                <h4 class="font-bold mb-2">No Limits</h4>
+                <p class="text-sm text-gray-600">Convert unlimited files</p>
+            </div>
+            <div class="bg-orange-50 p-6 rounded-lg text-center">
+                <i class="fas fa-cogs text-4xl text-orange-600 mb-3"></i>
+                <h4 class="font-bold mb-2">Advanced Tools</h4>
+                <p class="text-sm text-gray-600">Professional quality</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-400">&copy; 2026 The Best Converter. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/advanced-converter.js"></script>
+</body>
+</html>
