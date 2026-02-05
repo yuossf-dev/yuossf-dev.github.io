@@ -1095,13 +1095,11 @@ async function audioToVideo() {
     const audioData = await uploadedFile.arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(audioData);
     
-    updateProgress(30, 'Analyzing audio waveform...');
+    updateProgress(30, 'Creating video with audio...');
     
     // Get audio data for waveform
     const channelData = audioBuffer.getChannelData(0);
-    const duration = audioBuffer.duration;
-    const fps = 25;
-    const totalFrames = Math.ceil(duration * fps);
+    const duration = Math.min(audioBuffer.duration, 30); // Limit to 30 seconds for browser processing
     
     // Canvas setup
     const canvas = document.createElement('canvas');
@@ -1109,89 +1107,113 @@ async function audioToVideo() {
     canvas.height = 720;
     const ctx = canvas.getContext('2d');
     
-    updateProgress(50, 'Generating waveform frames...');
+    // Create video stream from canvas
+    const stream = canvas.captureStream(25); // 25 FPS
     
-    // Generate frames with waveform animation
-    const frames = [];
+    // Add audio track to stream
+    const audioSource = audioContext.createBufferSource();
+    audioSource.buffer = audioBuffer;
+    const destination = audioContext.createMediaStreamDestination();
+    audioSource.connect(destination);
+    
+    // Combine video and audio streams
+    const audioTrack = destination.stream.getAudioTracks()[0];
+    stream.addTrack(audioTrack);
+    
+    updateProgress(50, 'Recording video...');
+    
+    // Create MediaRecorder
+    const chunks = [];
+    const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9,opus',
+        videoBitsPerSecond: 2500000
+    });
+    
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+            chunks.push(e.data);
+        }
+    };
+    
+    // Start recording
+    mediaRecorder.start();
+    audioSource.start();
+    
+    // Animate waveform
+    const fps = 25;
+    const totalFrames = Math.ceil(duration * fps);
     const samplesPerFrame = Math.floor(channelData.length / totalFrames);
     
     for (let frame = 0; frame < totalFrames; frame++) {
+        await new Promise(resolve => setTimeout(resolve, 1000 / fps));
+        
         // Clear canvas
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Draw waveform
         ctx.strokeStyle = waveColor;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         
-        const startSample = frame * samplesPerFrame;
-        const endSample = Math.min(startSample + samplesPerFrame, channelData.length);
         const centerY = canvas.height / 2;
+        const barWidth = canvas.width / 100;
         
-        for (let i = 0; i < canvas.width; i++) {
-            const sampleIndex = startSample + Math.floor((i / canvas.width) * samplesPerFrame);
-            if (sampleIndex < endSample) {
-                const amplitude = channelData[sampleIndex] * (canvas.height / 2);
-                const x = i;
-                const y = centerY + amplitude;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
+        for (let i = 0; i < 100; i++) {
+            const sampleIndex = Math.floor((frame * samplesPerFrame) + (i * samplesPerFrame / 100));
+            const amplitude = Math.abs(channelData[sampleIndex] || 0);
+            const barHeight = amplitude * (canvas.height / 2);
+            
+            const x = i * barWidth;
+            const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
+            gradient.addColorStop(0, waveColor);
+            gradient.addColorStop(1, waveColor + '80');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, centerY - barHeight, barWidth - 2, barHeight * 2);
         }
-        
-        ctx.stroke();
         
         // Add timestamp
         ctx.fillStyle = '#ffffff';
-        ctx.font = '24px Arial';
-        ctx.fillText(`${(frame / fps).toFixed(2)}s`, 20, 50);
+        ctx.font = 'bold 32px Arial';
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 10;
+        ctx.fillText(`${(frame / fps).toFixed(1)}s`, 40, 60);
+        ctx.shadowBlur = 0;
         
-        // Capture frame
-        frames.push(canvas.toDataURL('image/jpeg', 0.8));
+        // Add file name
+        ctx.font = '24px Arial';
+        ctx.fillText(uploadedFile.name, 40, canvas.height - 40);
         
         if (frame % 10 === 0) {
-            updateProgress(50 + (frame / totalFrames) * 30, `Generating frame ${frame}/${totalFrames}...`);
+            updateProgress(50 + (frame / totalFrames) * 40, `Recording: ${frame}/${totalFrames} frames...`);
         }
     }
     
-    updateProgress(85, 'Creating image sequence...');
+    updateProgress(90, 'Finalizing video...');
     
-    // Create a downloadable ZIP of frames (since we can't create real video without server)
-    // For now, create an animated preview using the first few frames
-    const previewHTML = `
-        <div class="text-center p-4 bg-yellow-50 border-2 border-yellow-300 rounded">
-            <h3 class="font-bold text-lg mb-2">⚠️ Audio to Video - Limited Browser Version</h3>
-            <p class="mb-3">Generated ${totalFrames} waveform frames (${duration.toFixed(1)}s audio)</p>
-            <img src="${frames[0]}" class="max-w-full h-auto rounded mb-3" alt="Waveform Preview">
-            <div class="text-sm text-gray-600 mb-2">
-                <strong>Note:</strong> Full video encoding requires server-side processing.<br>
-                Download includes: Audio file + Frame images that can be combined with free tools like FFmpeg
-            </div>
-        </div>
-    `;
-    
-    // Create a downloadable package
-    const info = {
-        message: 'Audio waveform frames generated successfully!',
-        frames: frames.length,
-        duration: duration,
-        instructions: 'Use FFmpeg to combine: ffmpeg -framerate 25 -i frame_%d.jpg -i audio.mp3 output.mp4'
-    };
-    
-    const infoBlob = new Blob([JSON.stringify(info, null, 2)], { type: 'text/plain' });
-    const infoUrl = URL.createObjectURL(infoBlob);
-    
-    updateProgress(100, 'Complete!');
-    
-    return {
-        url: infoUrl,
-        filename: 'waveform_info.txt',
-        size: infoBlob.size,
-        preview: previewHTML
-    };
+    // Stop recording
+    return new Promise((resolve, reject) => {
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            
+            updateProgress(100, 'Complete!');
+            
+            resolve({
+                url: url,
+                filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '_waveform.webm',
+                size: blob.size
+            });
+        };
+        
+        mediaRecorder.onerror = (e) => {
+            reject(new Error('Recording failed: ' + e.error));
+        };
+        
+        setTimeout(() => {
+            mediaRecorder.stop();
+            audioSource.stop();
+        }, 100);
+    });
 }
