@@ -1003,44 +1003,55 @@ async function videoToGif() {
     };
 }
 
-// Video to MP3 conversion
+// Video to MP3 conversion (Browser-based)
 async function videoToMp3() {
-    updateProgress(60, 'Extracting audio...');
+    updateProgress(20, 'Loading video...');
     
-    const quality = document.getElementById('audioQuality')?.value || '192k';
+    const video = document.createElement('video');
+    video.src = URL.createObjectURL(uploadedFile);
     
-    // Write video file
-    const videoData = await uploadedFile.arrayBuffer();
-    ffmpegInstance.FS('writeFile', 'input.mp4', new Uint8Array(videoData));
+    await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = reject;
+    });
     
-    // Extract audio
-    updateProgress(70, 'Converting to MP3...');
-    await ffmpegInstance.run(
-        '-i', 'input.mp4',
-        '-vn',
-        '-ar', '44100',
-        '-ac', '2',
-        '-b:a', quality,
-        'output.mp3'
-    );
+    updateProgress(40, 'Extracting audio track...');
     
-    updateProgress(90, 'Finalizing audio...');
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaElementSource(video);
+    const dest = audioContext.createMediaStreamDestination();
+    source.connect(dest);
     
-    // Read result
-    const data = ffmpegInstance.FS('readFile', 'output.mp3');
-    const blob = new Blob([data.buffer], { type: 'audio/mpeg' });
-    const url = URL.createObjectURL(blob);
+    updateProgress(60, 'Recording audio...');
     
-    // Cleanup
-    ffmpegInstance.FS('unlink', 'input.mp4');
-    ffmpegInstance.FS('unlink', 'output.mp3');
+    const mediaRecorder = new MediaRecorder(dest.stream);
+    const chunks = [];
     
-    return {
-        url: url,
-        filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.mp3',
-        size: blob.size,
-        preview: `<audio controls class="w-full"><source src="${url}" type="audio/mpeg"></audio>`
-    };
+    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+    
+    return new Promise((resolve) => {
+        mediaRecorder.onstop = () => {
+            updateProgress(90, 'Finalizing...');
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            
+            resolve({
+                url: url,
+                filename: uploadedFile.name.replace(/\.[^/.]+$/, '') + '.webm',
+                size: blob.size,
+                preview: `<audio controls class="w-full"><source src="${url}" type="audio/webm"></audio>`
+            });
+        };
+        
+        mediaRecorder.start();
+        video.play();
+        
+        setTimeout(() => {
+            video.pause();
+            mediaRecorder.stop();
+            audioContext.close();
+        }, video.duration * 1000);
+    });
 }
 
 // GIF to Video conversion
