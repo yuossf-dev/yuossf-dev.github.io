@@ -408,7 +408,7 @@
             event.target.closest('.tool-card').classList.add('selected');
         }
         
-        function handleFileSelect(event) {
+        async function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
             
@@ -419,16 +419,92 @@
             // Hide download area
             document.getElementById('downloadArea').classList.add('hidden');
             
-            // Simulate conversion (in real implementation, actual conversion would happen here)
-            setTimeout(() => {
-                document.getElementById('processingStatus').classList.add('hidden');
-                document.getElementById('downloadArea').classList.remove('hidden');
+            try {
+                let convertedBlob = null;
+                let outputFilename = '';
                 
-                // Setup download button
-                document.getElementById('downloadBtn').onclick = () => {
-                    alert('In the full version, your converted file would download here!\n\nNote: This is a demo showing the interface. Real conversion requires additional libraries for each format.');
+                // Image conversions
+                if (currentConverter.includes('jpg-to-png') || currentConverter.includes('png-to-jpg') || 
+                    currentConverter.includes('jpg-to-webp') || currentConverter.includes('png-to-webp') || 
+                    currentConverter.includes('webp-to-jpg') || currentConverter.includes('heic-to-jpg')) {
+                    const result = await convertImage(file, currentConverter);
+                    convertedBlob = result.blob;
+                    outputFilename = result.filename;
+                }
+                // For formats requiring server-side processing, show message
+                else if (currentConverter.includes('pdf') || currentConverter.includes('word') || 
+                         currentConverter.includes('excel') || currentConverter.includes('ppt') ||
+                         currentConverter.includes('video') || currentConverter.includes('audio') ||
+                         currentConverter.includes('gif-to-mp4') || currentConverter.includes('svg')) {
+                    document.getElementById('processingStatus').classList.add('hidden');
+                    alert('⚠️ This conversion requires server-side processing.\n\nWe\'re currently adding this feature. For now, try:\n\n✅ Image conversions (JPG, PNG, WebP)\n✅ Image compression\n✅ Image resize\n\nStay tuned for updates!');
+                    return;
+                }
+                
+                if (convertedBlob) {
+                    // Show success
+                    document.getElementById('processingStatus').classList.add('hidden');
+                    document.getElementById('downloadArea').classList.remove('hidden');
+                    
+                    // Setup download button
+                    document.getElementById('downloadBtn').onclick = () => {
+                        const url = URL.createObjectURL(convertedBlob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = outputFilename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    };
+                }
+            } catch (error) {
+                document.getElementById('processingStatus').classList.add('hidden');
+                alert('Conversion failed: ' + error.message);
+            }
+        }
+        
+        async function convertImage(file, converterType) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Determine output format
+                        let mimeType = 'image/png';
+                        let extension = 'png';
+                        
+                        if (converterType.includes('to-jpg')) {
+                            mimeType = 'image/jpeg';
+                            extension = 'jpg';
+                        } else if (converterType.includes('to-webp')) {
+                            mimeType = 'image/webp';
+                            extension = 'webp';
+                        }
+                        
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                reject(new Error('Conversion failed'));
+                                return;
+                            }
+                            
+                            const filename = file.name.replace(/\.[^/.]+$/, '') + '.' + extension;
+                            resolve({ blob, filename });
+                        }, mimeType, 0.95);
+                    };
+                    
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = e.target.result;
                 };
-            }, 2000);
+                
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
         }
         
         // Drag and drop
