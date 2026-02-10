@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-adsense-account" content="ca-pub-6123398137525980">
+    <meta name="description" content="Free online file converter - Convert images (JPG, PNG, WebP, GIF, BMP), create PDFs, resize, compress, rotate, and edit images. All tools work in your browser.">
+    <title>All Tools - Image Converter & Editor | The Best Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6123398137525980" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .tool-card { transition: all 0.3s; cursor: pointer; }
+        .tool-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .tool-card.active { border-color: #7c3aed; background: #f3e8ff; border-width: 2px; }
+        #preview { max-width: 100%; max-height: 400px; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-sync-alt text-3xl"></i>
+                    <h1 class="text-2xl font-bold">The Best Converter</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6 text-sm">
+                    <a href="/" class="hover:text-gray-200 transition">Home</a>
+                    <a href="/tools.html" class="hover:text-gray-200 transition font-bold">All Tools</a>
+                    <a href="/blog.html" class="hover:text-gray-200 transition">Blog</a>
+                    <a href="/faq.html" class="hover:text-gray-200 transition">FAQ</a>
+                    <a href="/about.html" class="hover:text-gray-200 transition">About</a>
+                    <a href="/contact.html" class="hover:text-gray-200 transition">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-12 max-w-7xl">
+        <h1 class="text-4xl font-bold text-center mb-4 text-gray-800">All Conversion Tools</h1>
+        <p class="text-center text-gray-600 mb-12">Professional image converter & editor - All tools work in your browser!</p>
+
+        <!-- Tool Categories -->
+        <div class="grid md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-blue-50 p-4 rounded-lg text-center border-2 border-blue-200">
+                <i class="fas fa-exchange-alt text-3xl text-blue-600 mb-2"></i>
+                <h3 class="font-bold">Convert Formats</h3>
+                <p class="text-xs text-gray-600">JPG, PNG, WebP, GIF, BMP</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg text-center border-2 border-green-200">
+                <i class="fas fa-file-pdf text-3xl text-green-600 mb-2"></i>
+                <h3 class="font-bold">PDF Tools</h3>
+                <p class="text-xs text-gray-600">Create, Extract, Merge</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg text-center border-2 border-purple-200">
+                <i class="fas fa-edit text-3xl text-purple-600 mb-2"></i>
+                <h3 class="font-bold">Edit Images</h3>
+                <p class="text-xs text-gray-600">Resize, Rotate, Crop, Filter</p>
+            </div>
+            <div class="bg-orange-50 p-4 rounded-lg text-center border-2 border-orange-200">
+                <i class="fas fa-compress text-3xl text-orange-600 mb-2"></i>
+                <h3 class="font-bold">Optimize</h3>
+                <p class="text-xs text-gray-600">Compress, Reduce Size</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Tools Grid -->
+            <div class="md:col-span-1">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Select Tool</h2>
+                
+                <!-- Format Conversion -->
+                <div class="mb-6">
+                    <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-exchange-alt text-blue-600 mr-2"></i> Convert Format
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('jpg-to-png')">
+                            <i class="fas fa-arrow-right text-blue-500 mr-2"></i><strong>JPG to PNG</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('png-to-jpg')">
+                            <i class="fas fa-arrow-right text-blue-500 mr-2"></i><strong>PNG to JPG</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('to-webp')">
+                            <i class="fas fa-arrow-right text-blue-500 mr-2"></i><strong>Any to WebP</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('webp-to-jpg')">
+                            <i class="fas fa-arrow-right text-blue-500 mr-2"></i><strong>WebP to JPG</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('to-bmp')">
+                            <i class="fas fa-arrow-right text-blue-500 mr-2"></i><strong>Any to BMP</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PDF Tools -->
+                <div class="mb-6">
+                    <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-file-pdf text-green-600 mr-2"></i> PDF Tools
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('images-to-pdf')">
+                            <i class="fas fa-arrow-right text-green-500 mr-2"></i><strong>Images to PDF</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('text-to-pdf')">
+                            <i class="fas fa-arrow-right text-green-500 mr-2"></i><strong>Text to PDF</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Editing -->
+                <div class="mb-6">
+                    <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-edit text-purple-600 mr-2"></i> Edit Image
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('resize')">
+                            <i class="fas fa-arrow-right text-purple-500 mr-2"></i><strong>Resize</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('compress')">
+                            <i class="fas fa-arrow-right text-purple-500 mr-2"></i><strong>Compress</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('rotate')">
+                            <i class="fas fa-arrow-right text-purple-500 mr-2"></i><strong>Rotate</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('flip')">
+                            <i class="fas fa-arrow-right text-purple-500 mr-2"></i><strong>Flip</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('grayscale')">
+                            <i class="fas fa-arrow-right text-purple-500 mr-2"></i><strong>Grayscale</strong>
+                        </div>
+                        <div class="tool-card p-3 border rounded-lg bg-white" onclick="selectTool('crop')">
+                            <i class="fas fa-arrow-right text-purple-500 mr-2"></i><strong>Crop</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Area -->
+            <div class="md:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 id="toolTitle" class="text-2xl font-bold mb-4 text-gray-800">Select a tool to start</h2>
+                    <p id="toolDescription" class="text-gray-600 mb-6">Choose from 15+ professional conversion and editing tools</p>
+
+                    <!-- File Upload -->
+                    <div id="uploadSection">
+                        <div id="uploadArea" class="border-4 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-purple-500 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                            <p class="text-xl font-bold text-gray-700 mb-2">Drop files here or click to upload</p>
+                            <p class="text-gray-500">Support for all image formats</p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept="image/*" class="hidden" onchange="handleFiles(this.files)">
+                    </div>
+
+                    <!-- Text Input (for text to PDF) -->
+                    <div id="textSection" class="hidden">
+                        <textarea id="textInput" class="w-full h-64 p-4 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none" placeholder="Enter your text here..."></textarea>
+                    </div>
+
+                    <!-- Tool Options -->
+                    <div id="toolOptions" class="hidden mt-6 space-y-4"></div>
+
+                    <!-- Preview -->
+                    <div id="previewSection" class="hidden mt-6">
+                        <h3 class="font-bold mb-3">Preview:</h3>
+                        <div class="border rounded-lg p-4 bg-gray-50">
+                            <canvas id="preview" class="mx-auto"></canvas>
+                            <img id="previewImg" class="mx-auto hidden" />
+                        </div>
+                    </div>
+
+                    <!-- Convert Button -->
+                    <button id="convertBtn" onclick="convert()" class="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition hidden">
+                        <i class="fas fa-magic mr-2"></i> Convert Now
+                    </button>
+
+                    <!-- Progress -->
+                    <div id="progress" class="hidden mt-4">
+                        <div class="bg-gray-200 rounded-full h-3">
+                            <div id="progressBar" class="bg-gradient-to-r from-purple-600 to-blue-600 h-3 rounded-full transition-all" style="width: 0%"></div>
+                        </div>
+                        <p class="text-center mt-2 text-gray-600" id="progressText">Processing...</p>
+                    </div>
+
+                    <!-- Download -->
+                    <div id="downloadSection" class="hidden mt-6">
+                        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center">
+                            <i class="fas fa-check-circle text-5xl text-green-600 mb-3"></i>
+                            <h3 class="text-xl font-bold mb-3">Conversion Complete!</h3>
+                            <button onclick="download()" class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700 transition">
+                                <i class="fas fa-download mr-2"></i> Download File
+                            </button>
+                            <button onclick="reset()" class="ml-3 bg-gray-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-700 transition">
+                                <i class="fas fa-redo mr-2"></i> Convert Another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ad Space -->
+                <div class="mt-6 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-6123398137525980" data-ad-slot="7818146070" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-400">&copy; 2026 The Best Converter. All rights reserved.</p>
+            <div class="mt-4 space-x-4 text-sm">
+                <a href="/privacy.html" class="text-gray-400 hover:text-white">Privacy</a>
+                <a href="/terms.html" class="text-gray-400 hover:text-white">Terms</a>
+                <a href="/blog.html" class="text-gray-400 hover:text-white">Blog</a>
+                <a href="/faq.html" class="text-gray-400 hover:text-white">FAQ</a>
+                <a href="/contact.html" class="text-gray-400 hover:text-white">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentTool = null;
+        let uploadedFiles = [];
+        let processedImage = null;
+
+        const toolInfo = {
+            'jpg-to-png': { title: 'JPG to PNG Converter', desc: 'Convert JPG images to PNG format with transparency support' },
+            'png-to-jpg': { title: 'PNG to JPG Converter', desc: 'Convert PNG images to JPG format for smaller file sizes' },
+            'to-webp': { title: 'Convert to WebP', desc: 'Convert any image to modern WebP format (smaller size, great quality)' },
+            'webp-to-jpg': { title: 'WebP to JPG', desc: 'Convert WebP images to universal JPG format' },
+            'to-bmp': { title: 'Convert to BMP', desc: 'Convert images to BMP (Bitmap) format' },
+            'images-to-pdf': { title: 'Images to PDF', desc: 'Combine multiple images into one PDF document' },
+            'text-to-pdf': { title: 'Text to PDF', desc: 'Create PDF document from text' },
+            'resize': { title: 'Resize Image', desc: 'Change image dimensions while maintaining quality' },
+            'compress': { title: 'Compress Image', desc: 'Reduce file size without visible quality loss' },
+            'rotate': { title: 'Rotate Image', desc: 'Rotate image by 90°, 180°, or 270°' },
+            'flip': { title: 'Flip Image', desc: 'Flip image horizontally or vertically' },
+            'grayscale': { title: 'Grayscale Filter', desc: 'Convert image to black and white' },
+            'crop': { title: 'Crop Image', desc: 'Cut out specific part of image' }
+        };
+
+        function selectTool(tool) {
+            currentTool = tool;
+            uploadedFiles = [];
+            
+            // Update UI
+            document.querySelectorAll('.tool-card').forEach(card => card.classList.remove('active'));
+            event.target.closest('.tool-card').classList.add('active');
+            
+            const info = toolInfo[tool];
+            document.getElementById('toolTitle').textContent = info.title;
+            document.getElementById('toolDescription').textContent = info.desc;
+            
+            // Show/hide sections
+            document.getElementById('uploadSection').classList.toggle('hidden', tool === 'text-to-pdf');
+            document.getElementById('textSection').classList.toggle('hidden', tool !== 'text-to-pdf');
+            document.getElementById('previewSection').classList.add('hidden');
+            document.getElementById('downloadSection').classList.add('hidden');
+            document.getElementById('toolOptions').classList.add('hidden');
+            document.getElementById('convertBtn').classList.add('hidden');
+            
+            // Show options for specific tools
+            if (tool === 'resize') showResizeOptions();
+            else if (tool === 'compress') showCompressOptions();
+            else if (tool === 'rotate') showRotateOptions();
+            else if (tool === 'flip') showFlipOptions();
+            else if (tool === 'text-to-pdf') document.getElementById('convertBtn').classList.remove('hidden');
+        }
+
+        function showResizeOptions() {
+            document.getElementById('toolOptions').innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Width (px)</label>
+                        <input type="number" id="resizeWidth" class="w-full p-2 border rounded" value="800">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Height (px)</label>
+                        <input type="number" id="resizeHeight" class="w-full p-2 border rounded" value="600">
+                    </div>
+                </div>
+                <label class="flex items-center mt-2">
+                    <input type="checkbox" id="maintainAspect" checked class="mr-2"> Maintain aspect ratio
+                </label>
+            `;
+            document.getElementById('toolOptions').classList.remove('hidden');
+        }
+
+        function showCompressOptions() {
+            document.getElementById('toolOptions').innerHTML = `
+                <label class="block text-sm font-bold mb-2">Quality: <span id="qualityValue">80</span>%</label>
+                <input type="range" id="quality" min="1" max="100" value="80" class="w-full" oninput="document.getElementById('qualityValue').textContent = this.value">
+                <p class="text-xs text-gray-500 mt-2">Lower quality = smaller file size</p>
+            `;
+            document.getElementById('toolOptions').classList.remove('hidden');
+        }
+
+        function showRotateOptions() {
+            document.getElementById('toolOptions').innerHTML = `
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setRotation(90)" class="p-3 border-2 rounded-lg hover:border-purple-500">90°</button>
+                    <button onclick="setRotation(180)" class="p-3 border-2 rounded-lg hover:border-purple-500">180°</button>
+                    <button onclick="setRotation(270)" class="p-3 border-2 rounded-lg hover:border-purple-500">270°</button>
+                </div>
+            `;
+            document.getElementById('toolOptions').classList.remove('hidden');
+        }
+
+        function showFlipOptions() {
+            document.getElementById('toolOptions').innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setFlip('horizontal')" class="p-3 border-2 rounded-lg hover:border-purple-500">Horizontal</button>
+                    <button onclick="setFlip('vertical')" class="p-3 border-2 rounded-lg hover:border-purple-500">Vertical</button>
+                </div>
+            `;
+            document.getElementById('toolOptions').classList.remove('hidden');
+        }
+
+        let rotation = 0, flipDir = null;
+        function setRotation(deg) { rotation = deg; }
+        function setFlip(dir) { flipDir = dir; }
+
+        function handleFiles(files) {
+            if (!currentTool) return alert('Please select a tool first!');
+            uploadedFiles = Array.from(files);
+            document.getElementById('convertBtn').classList.remove('hidden');
+            
+            // Show preview for first image
+            if (files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.getElementById('previewImg');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    document.getElementById('previewSection').classList.remove('hidden');
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        }
+
+        async function convert() {
+            if (!currentTool) return;
+            
+            document.getElementById('progress').classList.remove('hidden');
+            document.getElementById('convertBtn').disabled = true;
+            
+            try {
+                if (currentTool === 'text-to-pdf') {
+                    await textToPDF();
+                } else if (currentTool === 'images-to-pdf') {
+                    await imagesToPDF();
+                } else if (uploadedFiles.length > 0) {
+                    await processImage(uploadedFiles[0]);
+                }
+                
+                document.getElementById('progress').classList.add('hidden');
+                document.getElementById('downloadSection').classList.remove('hidden');
+            } catch (error) {
+                alert('Error: ' + error.message);
+                document.getElementById('progress').classList.add('hidden');
+                document.getElementById('convertBtn').disabled = false;
+            }
+        }
+
+        async function processImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.getElementById('preview');
+                        const ctx = canvas.getContext('2d');
+                        
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Apply transformations based on tool
+                        if (currentTool === 'resize') {
+                            width = parseInt(document.getElementById('resizeWidth').value);
+                            height = parseInt(document.getElementById('resizeHeight').value);
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Rotation
+                        if (currentTool === 'rotate') {
+                            ctx.translate(width/2, height/2);
+                            ctx.rotate(rotation * Math.PI / 180);
+                            ctx.translate(-width/2, -height/2);
+                        }
+                        
+                        // Flip
+                        if (currentTool === 'flip') {
+                            if (flipDir === 'horizontal') {
+                                ctx.translate(width, 0);
+                                ctx.scale(-1, 1);
+                            } else {
+                                ctx.translate(0, height);
+                                ctx.scale(1, -1);
+                            }
+                        }
+                        
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Grayscale
+                        if (currentTool === 'grayscale') {
+                            const imageData = ctx.getImageData(0, 0, width, height);
+                            const data = imageData.data;
+                            for (let i = 0; i < data.length; i += 4) {
+                                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                                data[i] = data[i + 1] = data[i + 2] = avg;
+                            }
+                            ctx.putImageData(imageData, 0, 0);
+                        }
+                        
+                        // Get output format
+                        let mimeType = 'image/png';
+                        let quality = 0.9;
+                        
+                        if (currentTool === 'png-to-jpg' || currentTool === 'webp-to-jpg') mimeType = 'image/jpeg';
+                        else if (currentTool === 'to-webp') mimeType = 'image/webp';
+                        else if (currentTool === 'to-bmp') mimeType = 'image/bmp';
+                        else if (currentTool === 'compress') {
+                            mimeType = 'image/jpeg';
+                            quality = parseInt(document.getElementById('quality').value) / 100;
+                        }
+                        
+                        canvas.toBlob((blob) => {
+                            processedImage = blob;
+                            resolve();
+                        }, mimeType, quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function imagesToPDF() {
+            const { PDFDocument } = PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            
+            for (const file of uploadedFiles) {
+                const arrayBuffer = await file.arrayBuffer();
+                let image;
+                
+                if (file.type === 'image/png') {
+                    image = await pdfDoc.embedPng(arrayBuffer);
+                } else {
+                    image = await pdfDoc.embedJpg(arrayBuffer);
+                }
+                
+                const page = pdfDoc.addPage([image.width, image.height]);
+                page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+            }
+            
+            const pdfBytes = await pdfDoc.save();
+            processedImage = new Blob([pdfBytes], { type: 'application/pdf' });
+        }
+
+        async function textToPDF() {
+            const { PDFDocument, rgb } = PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage();
+            const text = document.getElementById('textInput').value;
+            
+            page.drawText(text, {
+                x: 50,
+                y: page.getHeight() - 50,
+                size: 12,
+                color: rgb(0, 0, 0),
+            });
+            
+            const pdfBytes = await pdfDoc.save();
+            processedImage = new Blob([pdfBytes], { type: 'application/pdf' });
+        }
+
+        function download() {
+            const url = URL.createObjectURL(processedImage);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            let extension = 'png';
+            if (currentTool.includes('jpg')) extension = 'jpg';
+            else if (currentTool.includes('webp')) extension = 'webp';
+            else if (currentTool.includes('bmp')) extension = 'bmp';
+            else if (currentTool.includes('pdf')) extension = 'pdf';
+            
+            a.download = `converted.${extension}`;
+            a.click();
+        }
+
+        function reset() {
+            location.reload();
+        }
+
+        // Initialize AdSense
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</body>
+</html>
